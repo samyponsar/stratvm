@@ -6,9 +6,9 @@ A hands-on Kubernetes training environment for practicing every domain of the **
 
 ## Event Pipeline
 
-👤 **Client**
-  └─ POST → **API** → **Redis** → **Worker** → **PostgreSQL**
-  └─ GET → **API** → **PostgreSQL** → **Dashboard**
+└─ POST → **API** → **Redis** → **Worker** → **PostgreSQL**
+
+└─ GET → **API** → **PostgreSQL** → **Dashboard**
 
 ## Local Dev
 
