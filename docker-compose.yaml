@@ -27,6 +27,7 @@ services:
       - 8000:8000
     volumes:
       - ./api:/app
+      - ./shared:/app/shared
     environment:
       POSTGRES_HOST: ${POSTGRES_HOST}
       POSTGRES_PORT: ${POSTGRES_PORT}
@@ -47,6 +48,7 @@ services:
     container_name: stratvm_worker
     volumes:
       - ./worker:/app
+      - ./shared:/app/shared
     environment:
       POSTGRES_HOST: ${POSTGRES_HOST}
       POSTGRES_PORT: ${POSTGRES_PORT}

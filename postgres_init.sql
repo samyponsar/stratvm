@@ -1,6 +1,6 @@
 CREATE TABLE events (
-    id              BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-    client_id       VARCHAR(64) NOT NULL,
+    id              BIGSERIAL PRIMARY KEY,
+    tenant_id       VARCHAR(64) NOT NULL,
     event_type      VARCHAR(128) NOT NULL,
     received_at     TIMESTAMPTZ NOT NULL,
     processed_at    TIMESTAMPTZ NOT NULL,
