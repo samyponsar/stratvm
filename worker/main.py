@@ -1,6 +1,3 @@
-# Worker reads from Redis queue and persists to PostgreSQL.
-# [API] ──LPUSH──→ [Redis] ──BRPOP──→ [Worker] ──INSERT──→ [PostgreSQL]
-
 import json
 import logging
 import os

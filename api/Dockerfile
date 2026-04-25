@@ -1,12 +1,8 @@
-FROM python:3.14-slim
+FROM ghcr.io/astral-sh/uv:alpine
 
 WORKDIR /app
 
-RUN pip install uv
-
 COPY . .
-
-RUN uv sync --frozen
 
 EXPOSE 8000
 

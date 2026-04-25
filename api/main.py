@@ -1,6 +1,3 @@
-# Client ──POST──→ [API] ──LPUSH──→ [Redis] ──BRPOP──→ [Worker] ──INSERT──→ [PostgreSQL]
-# Client ──GET───→ [API] ──SELECT──→ [PostgreSQL]
-
 from fastapi import FastAPI, HTTPException, Query
 from typing import Annotated, Set
 import json
