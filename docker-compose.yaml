@@ -1,0 +1,62 @@
+services:
+  redis:
+    image: redis:8
+    container_name: stratvm_redis
+    command: redis-server --aclfile /usr/local/etc/redis/acl.conf
+    volumes:
+      - ./acl.conf:/usr/local/etc/redis/acl.conf
+    ports:
+      - 6379:6379
+
+  postgres:
+    image: postgres:18
+    container_name: stratvm_postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - ./postgres_init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - 5432:5432
+
+  api:
+    build:
+      context: ./api
+    container_name: stratvm_api
+    ports:
+      - 8000:8000
+    volumes:
+      - ./api:/app
+    environment:
+      POSTGRES_HOST: ${POSTGRES_HOST}
+      POSTGRES_PORT: ${POSTGRES_PORT}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT}
+      REDIS_USER: ${API_REDIS_USER}
+      REDIS_PASSWORD: ${API_REDIS_PASSWORD}
+    depends_on:
+      - redis
+      - postgres
+
+  worker:
+    build:
+      context: ./worker
+    container_name: stratvm_worker
+    volumes:
+      - ./worker:/app
+    environment:
+      POSTGRES_HOST: ${POSTGRES_HOST}
+      POSTGRES_PORT: ${POSTGRES_PORT}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT}
+      REDIS_USER: ${WORKER_REDIS_USER}
+      REDIS_PASSWORD: ${WORKER_REDIS_PASSWORD}
+    depends_on:
+      - redis
+      - postgres
