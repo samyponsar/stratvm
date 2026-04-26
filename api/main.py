@@ -70,7 +70,13 @@ def get_events(
         with postgresql_connection.cursor() as cursor:
             cursor.execute(query, params)
             rows = cursor.fetchall()
-            return rows
+            columns = [desc[0] for desc in cursor.description]
+            result = []
+            for row in rows:
+                event_dict = dict(zip(columns, row))
+                validated = Event(**event_dict)
+                result.append(validated.model_dump())
+            return result
     except Exception as e:
         raise HTTPException(status_code=500, detail="Service temporarily unavailable. Please try again.")
 
