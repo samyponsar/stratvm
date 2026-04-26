@@ -26,27 +26,33 @@ pending_events = []
 MAX_PENDING_EVENTS = 10
 
 while True:
-    _, data = redis_connection.brpop("client1:events", timeout=0)
+    _, data = redis_connection.brpop("events", timeout=0)
     if data:
         event = Event.model_validate(json.loads(data.decode("utf-8")))
         event.processed_at = datetime.utcnow()
         pending_events.append(event)
-        logger.info(f"{len(pending_events)} pending events.")
 
     if len(pending_events) >= MAX_PENDING_EVENTS:
+        committed_at = datetime.utcnow()
+        for e in pending_events:
+            e.committed_at = committed_at
         with postgresql_connection.cursor() as cursor:
             cursor.executemany(
-                "INSERT INTO events (tenant_id, event_type, received_at, processed_at) VALUES (%s, %s, %s, %s)",
+                "INSERT INTO events (tenant_id, event_type, received_at, processed_at, committed_at, success, failure_reason, payload, metadata) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)",
                 [
                     (
                         e.tenant_id,
                         e.event_type,
                         e.received_at,
                         e.processed_at,
+                        e.committed_at,
+                        e.success,
+                        e.failure_reason,
+                        json.dumps(e.payload),
+                        json.dumps(e.metadata),
                     )
                     for e in pending_events
                 ],
             )
         postgresql_connection.commit()
         pending_events.clear()
-        logger.info("Ting")

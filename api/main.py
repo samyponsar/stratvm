@@ -2,12 +2,10 @@ from datetime import datetime
 from typing import Annotated, Optional, Set
 from fastapi import FastAPI, HTTPException, Query
 from pydantic import BaseModel, Field
-import json
 import logging
 import os
 import redis
 import psycopg
-import uuid
 from shared.event import Event
 
 logging.basicConfig(level=logging.INFO)
@@ -31,21 +29,6 @@ app = FastAPI(
     contact={"name": "Admin", "email": "samy.ponsar@proton.me"},
 )
 
-
-@app.get("/api/v1/stats")
-def stats(
-    log_level: Annotated[int, Query(ge=0, le=5)] = 0,
-    count: Annotated[int, Query(ge=1, le=100)] = 5,
-    namespaces: Annotated[Set[str], Query(max_length=10)] = None,
-):
-    print(namespaces)
-    return {
-        "log_level": log_level,
-        "count": count,
-        "namespaces": namespaces,
-    }
-
-
 class EventCreate(BaseModel):
     tenant_id: str = Field(..., max_length=64)
     event_type: str = Field(..., max_length=128)
@@ -64,7 +47,7 @@ def push_event(body: EventCreate):
         metadata=body.metadata,
     )
     try:
-        redis_connection.lpush(f"{body.tenant_id}:events", event.model_dump_json())
+        redis_connection.lpush("events", event.model_dump_json())
         return event
     except Exception as e:
         raise HTTPException(status_code=500, detail="Service temporarily unavailable. Please try again.")
@@ -77,12 +60,15 @@ def get_events(
     count: int = Query(10, ge=1, le=100),
 ):
     try:
-        query = f"SELECT * FROM events " + \
-            f"WHERE tenant_id = '{tenant_id}' " + \
-            f"AND event_type = " + str(event_type) if event_type else "" + \
-            f"ORDER BY received_at DESC LIMIT {count}"
+        query = "SELECT * FROM events WHERE tenant_id = %s"
+        params = [tenant_id]
+        if event_type:
+            query += " AND event_type = %s"
+            params.append(event_type)
+        query += " ORDER BY received_at DESC LIMIT %s"
+        params.append(count)
         with postgresql_connection.cursor() as cursor:
-            cursor.execute(query)
+            cursor.execute(query, params)
             rows = cursor.fetchall()
             return rows
     except Exception as e:

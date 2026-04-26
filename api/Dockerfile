@@ -2,7 +2,8 @@ FROM ghcr.io/astral-sh/uv:alpine
 
 WORKDIR /app
 
-COPY . .
+COPY shared/ ./shared/
+COPY api/ ./
 
 EXPOSE 8000
 

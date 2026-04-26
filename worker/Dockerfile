@@ -2,6 +2,7 @@ FROM ghcr.io/astral-sh/uv:alpine
 
 WORKDIR /app
 
-COPY . .
+COPY shared/ ./shared/
+COPY worker/ ./
 
 CMD ["uv", "run", "main.py"]

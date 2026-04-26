@@ -4,7 +4,7 @@ CREATE TABLE events (
     event_type      VARCHAR(128) NOT NULL,
     received_at     TIMESTAMPTZ NOT NULL,
     processed_at    TIMESTAMPTZ NOT NULL,
-    created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+    committed_at    TIMESTAMPTZ NOT NULL,
     success         BOOLEAN NOT NULL,
     failure_reason  TEXT,
     payload         JSONB,

@@ -8,7 +8,7 @@ class Event(BaseModel):
     event_type: str = Field(..., max_length=128)
     received_at: datetime
     processed_at: Optional[datetime] = None
-    created_at: Optional[datetime] = None
+    committed_at: Optional[datetime] = None
     success: bool
     failure_reason: Optional[str] = None
     payload: Optional[dict] = None
