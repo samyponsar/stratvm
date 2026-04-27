@@ -1,8 +1,8 @@
 import json
 import logging
 import os
-from datetime import datetime
-
+import time
+from datetime import UTC, datetime
 import psycopg
 import redis
 
@@ -18,41 +18,47 @@ redis_connection = redis.Redis(
     password=os.getenv("REDIS_PASSWORD"),
 )
 
-postgresql_connection = psycopg.connect(
+postgres_connection = psycopg.connect(
     f"dbname={os.getenv('POSTGRES_DB')} user={os.getenv('POSTGRES_USER')} password={os.getenv('POSTGRES_PASSWORD')} host={os.getenv('POSTGRES_HOST')} port={os.getenv('POSTGRES_PORT')}"
 )
 
 pending_events = []
-MAX_PENDING_EVENTS = 10
+FLUSH_INTERVAL_SECONDS = 2
+
+last_flush = time.time()
 
 while True:
     _, data = redis_connection.brpop("events", timeout=0)
     if data:
-        event = Event.model_validate(json.loads(data.decode("utf-8")))
-        event.processed_at = datetime.utcnow()
-        pending_events.append(event)
+        try:
+            event = Event.model_validate(json.loads(data.decode("utf-8")))
+            event.processed_at = datetime.now(UTC)
+            pending_events.append(event)
+        except Exception as e:
+            logger.critical(f"Error validating an event from Redis: {e}")
 
-    if len(pending_events) >= MAX_PENDING_EVENTS:
-        committed_at = datetime.utcnow()
-        for e in pending_events:
-            e.committed_at = committed_at
-        with postgresql_connection.cursor() as cursor:
-            cursor.executemany(
-                "INSERT INTO events (tenant_id, event_type, received_at, processed_at, committed_at, success, failure_reason, payload, metadata) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)",
-                [
-                    (
-                        e.tenant_id,
-                        e.event_type,
-                        e.received_at,
-                        e.processed_at,
-                        e.committed_at,
-                        e.success,
-                        e.failure_reason,
-                        json.dumps(e.payload),
-                        json.dumps(e.metadata),
-                    )
-                    for e in pending_events
-                ],
-            )
-        postgresql_connection.commit()
-        pending_events.clear()
+    if time.time() - last_flush >= FLUSH_INTERVAL_SECONDS and pending_events:
+        try:
+            committed_at = datetime.now(UTC)
+            for e in pending_events:
+                e.committed_at = committed_at
+            with postgres_connection.cursor() as cursor:
+                cursor.executemany(
+                    "INSERT INTO events (tenant_id, event_type, received_at, processed_at, committed_at, payload, metadata) VALUES (%s, %s, %s, %s, %s, %s, %s)",
+                    [
+                        (
+                            e.tenant_id,
+                            e.event_type,
+                            e.received_at,
+                            e.processed_at,
+                            e.committed_at,
+                            json.dumps(e.payload) if e.payload else None,
+                            json.dumps(e.metadata) if e.metadata else None,
+                        )
+                        for e in pending_events
+                    ],
+                )
+            postgres_connection.commit()
+            pending_events.clear()
+        except Exception as e:
+            logger.critical(f"Error while writing to Postgres: {e}")

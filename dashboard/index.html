@@ -5,10 +5,46 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Stratvm Dashboard</title>
 	<link rel="stylesheet" href="https://unpkg.com/simpledotcss/simple.min.css">
+    <style>
+        body { padding: 1rem; }
+        details {
+            padding: 0.5rem;
+        }
+        summary {
+            cursor: pointer;
+            list-style: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        summary::before {
+            content: '▸';
+            display: inline-block;
+            transition: transform 0.15s;
+        }
+        details[open] summary::before {
+            transform: rotate(90deg);
+        }
+        .event-header {
+            font-family: monospace;
+            font-weight: bold;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        pre {
+            margin: 0.5rem 0 0 1.5rem;
+            padding: 0.5rem;
+            background: #f5f5f5;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            overflow-x: auto;
+        }
+    </style>
 <body>
 	<header>
 		<img src="stratvm-white.svg" width=200 height=140>
-	</header
+	</header>
 	<main>
 			<h1>Event query</h1>
 			<label>tenant_id: <input id="tenant" value="acme"></label>
@@ -16,11 +52,41 @@
 			<label>count: <input id="count" type="number" value="10" min="1" max="100"></label>
 			<button id="fetch">Load Events</button>
 			<hr>
-			<pre id="result"></pre>
+			<div id="result"></div>
 
 	</main>
 
     <script>
+        function renderJSON(obj, indent = 2) {
+            if (obj === null || typeof obj !== 'object') return JSON.stringify(obj);
+            const entries = Object.entries(obj);
+            if (entries.length === 0) return '{}';
+            let html = '<div style="margin-left: 1.5rem;">';
+            entries.forEach(([key, value]) => {
+                if (typeof value === 'object' && value !== null) {
+                    html += `<details open><summary><span class="json-key">"${key}"</span></summary>${renderJSON(value, indent + 2)}</details>`;
+                } else {
+                    const formatted = Array.isArray(value) ? renderJSON(value, indent) : JSON.stringify(value);
+                    html += `<div><span class="json-key">"${key}"</span>: ${formatted}</div>`;
+                }
+            });
+            html += '</div>';
+            return html;
+        }
+
+        function renderEvents(events) {
+            if (!events.length) return '<p>No events found.</p>';
+            return events.map((event, idx) => `
+                <details>
+                    <summary>
+                        <span style="width:100%;" class="event-header">${event.event_type}</span>
+                        <span style="width:100%; text-align: right;c color: #666; font-size: 0.8rem; font-weight: 400;">${event.received_at}</span>
+                    </summary>
+                    <pre style="background: black">${renderJSON(event)}</pre>
+                </details>
+            `).join('');
+        }
+
         document.getElementById("fetch").addEventListener("click", async () => {
             const tenant = document.getElementById("tenant").value;
             const type = document.getElementById("type").value;
@@ -29,7 +95,7 @@
             if (type) url += `&event_type=${encodeURIComponent(type)}`;
             const res = await fetch(url);
             const data = await res.json();
-            document.getElementById("result").textContent = JSON.stringify(data, null, 2);
+            document.getElementById("result").innerHTML = renderEvents(data);
         });
     </script>
 </body>

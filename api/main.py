@@ -1,5 +1,5 @@
-from datetime import datetime
-from typing import Annotated, Optional, Set
+from datetime import UTC, datetime
+from typing import Optional
 from fastapi import FastAPI, HTTPException, Query
 from pydantic import BaseModel, Field
 import logging
@@ -18,13 +18,13 @@ redis_connection = redis.Redis(
     password=os.getenv("REDIS_PASSWORD"),
 )
 
-postgresql_connection = psycopg.connect(
+postgres_connection = psycopg.connect(
     f"dbname={os.getenv('POSTGRES_DB')} user={os.getenv('POSTGRES_USER')} password={os.getenv('POSTGRES_PASSWORD')} host={os.getenv('POSTGRES_HOST')} port={os.getenv('POSTGRES_PORT')}"
 )
 
 app = FastAPI(
     title="spectrvm API",
-    description="Provide endpoints for clients to post their events to, and for their dashboard to retrieve them.",
+    description="Provides endpoints for clients to post their events to, and for their dashboard to retrieve them.",
     version="0.1.0",
     contact={"name": "Admin", "email": "samy.ponsar@proton.me"},
 )
@@ -38,19 +38,23 @@ class EventCreate(BaseModel):
 
 @app.post("/api/v1/events")
 def push_event(body: EventCreate):
-    event = Event(
-        tenant_id=body.tenant_id,
-        event_type=body.event_type,
-        received_at=datetime.utcnow(),
-        success=True,
-        payload=body.payload,
-        metadata=body.metadata,
-    )
+    try:
+        event = Event(
+            tenant_id=body.tenant_id,
+            event_type=body.event_type,
+            received_at=datetime.now(UTC),
+            payload=body.payload,
+            metadata=body.metadata,
+        )
+    except Exception as e:
+        logger.error(f"{e}")
+        raise HTTPException(status_code=422, detail=str(e))
     try:
         redis_connection.lpush("events", event.model_dump_json())
         return event
     except Exception as e:
-        raise HTTPException(status_code=500, detail="Service temporarily unavailable. Please try again.")
+        logger.error(f"{e}")
+        raise HTTPException(status_code=503, detail="Service temporarily unavailable. Please try again.")
 
 
 @app.get("/api/v1/events")
@@ -67,20 +71,28 @@ def get_events(
             params.append(event_type)
         query += " ORDER BY received_at DESC LIMIT %s"
         params.append(count)
-        with postgresql_connection.cursor() as cursor:
+        with postgres_connection.cursor() as cursor:
             cursor.execute(query, params)
             rows = cursor.fetchall()
             columns = [desc[0] for desc in cursor.description]
             result = []
             for row in rows:
                 event_dict = dict(zip(columns, row))
-                validated = Event(**event_dict)
-                result.append(validated.model_dump())
+                try:
+                    validated = Event(**event_dict)
+                    result.append(validated.model_dump())
+                except Exception as e:
+                    logger.critical(f"Event with id {event_dict.id} failed pydantic validation.")
+                    continue
             return result
     except Exception as e:
-        raise HTTPException(status_code=500, detail="Service temporarily unavailable. Please try again.")
+        raise HTTPException(status_code=503, detail="Service temporarily unavailable. Please try again.")
 
 
 @app.get("/health")
 def health():
-    return {"status": "ok"}
+    redis_connected = redis_connection.ping()
+    postgres_connected = not postgres_connection.closed
+    if redis_connected and postgres_connected:
+        return {"status": "ok"}
+    raise HTTPException(status_code=503, detail="Service temporarily unavailable. Please try again.")

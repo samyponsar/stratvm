@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import Optional
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, field_validator
+import re
 
 
 class Event(BaseModel):
@@ -9,15 +10,14 @@ class Event(BaseModel):
     received_at: datetime
     processed_at: Optional[datetime] = None
     committed_at: Optional[datetime] = None
-    success: bool
-    failure_reason: Optional[str] = None
     payload: Optional[dict] = None
     metadata: Optional[dict] = None
 
-    @model_validator(mode="after")
-    def check_failure_reason(self) -> "Event":
-        if not self.success and self.failure_reason is None:
+    @field_validator("event_type")
+    @classmethod
+    def check_event_type(cls, v: str) -> str:
+        if not re.match(r'^[a-z][a-z0-9._-]*$', v):
             raise ValueError(
-                "failure_reason is required when success is false"
+                "event_type must start with a letter and contain only a-z0-9._-"
             )
-        return self
+        return v

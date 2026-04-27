@@ -7,4 +7,4 @@ COPY api/ ./
 
 EXPOSE 8000
 
-CMD ["uv", "run", "fastapi", "dev", "--host", "0.0.0.0"]
+CMD ["uv", "run", "fastapi", "run", "--host", "0.0.0.0"]
