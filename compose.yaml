@@ -18,6 +18,7 @@ services:
       - ./postgres/postgres_init.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
       - 5432:5432
+    env_file: ".env"
 
   api:
     build:
@@ -39,6 +40,7 @@ services:
     depends_on:
       - redis
       - postgres
+    env_file: ".env"
 
   worker:
     build:
@@ -58,6 +60,7 @@ services:
     depends_on:
       - redis
       - postgres
+    env_file: ".env"
 
   dashboard:
     image: docker.io/library/nginx:alpine
