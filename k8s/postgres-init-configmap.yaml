@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-init
+data:
+  postgres_init.sql: |
+    CREATE TABLE events (
+        id              BIGSERIAL PRIMARY KEY,
+        tenant_id       VARCHAR(64) NOT NULL,
+        event_type      VARCHAR(128) NOT NULL,
+        received_at     TIMESTAMPTZ NOT NULL,
+        processed_at    TIMESTAMPTZ NOT NULL,
+        committed_at    TIMESTAMPTZ NOT NULL,
+        payload         JSONB,
+        metadata        JSONB
+    );

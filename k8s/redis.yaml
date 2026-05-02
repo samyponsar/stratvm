@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis-deployment
+  labels:
+    app: redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+      - name: redis
+        image: docker.io/library/redis:8-alpine
+        command: ["redis-server", "--aclfile", "/etc/redis/acl.conf"]
+        ports:
+        - containerPort: 6379
+        volumeMounts:
+        - name: acl
+          mountPath: /etc/redis/acl.conf
+          subPath: acl.conf
+      volumes:
+      - name: acl
+        configMap:
+          name: redis-acl
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-service
+spec:
+  selector:
+    app: redis
+  ports:
+    - protocol: TCP
+      port: 6379
+      targetPort: 6379

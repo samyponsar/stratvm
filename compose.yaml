@@ -23,7 +23,7 @@ services:
   api:
     build:
       context: .
-      dockerfile: api/Dockerfile
+      dockerfile: api/Containerfile
     container_name: stratvm_api
     ports:
       - 8000:8000
@@ -45,7 +45,7 @@ services:
   worker:
     build:
       context: .
-      dockerfile: worker/Dockerfile
+      dockerfile: worker/Containerfile
     container_name: stratvm_worker
     environment:
       POSTGRES_HOST: ${POSTGRES_HOST}
@@ -72,3 +72,4 @@ services:
       - ./dashboard/nginx.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
       - api
+
