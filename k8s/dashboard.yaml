@@ -16,18 +16,20 @@ spec:
     spec:
       containers:
       - name: dashboard
-        image: 127.0.0.1:5000/dashboard:latest
+        image: dashboard:latest
+        imagePullPolicy: IfNotPresent
         ports:
-        - containerPort: 3000
+        - containerPort: 80
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: dashboard-service
 spec:
+spec:
   selector:
     app: dashboard
   ports:
     - protocol: TCP
-      port: 3000
-      targetPort: 3000
+      port: 80
+      targetPort: 80

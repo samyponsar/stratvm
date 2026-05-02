@@ -16,7 +16,8 @@ spec:
     spec:
       containers:
       - name: api
-        image: 127.0.0.1:5000/api:latest
+        image: api:latest
+        imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8000
         env:

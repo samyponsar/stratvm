@@ -1,26 +1,19 @@
-REG = 127.0.0.1:5000
+.PHONY: k8s-build k8s-apply k8s-delete k8s-serve k8s
 
+k8s-build:
+	eval $$(minikube docker-env) && \
+	docker build -t api:latest -f ./api/Containerfile . && \
+	docker build -t worker:latest -f ./worker/Containerfile . && \
+	docker build -t dashboard:latest -f ./dashboard/Containerfile .
 
-.PHONY: all up down rebuild
+k8s-apply:
+	kubectl apply -f ./k8s/
 
-all: rebuild
+k8s-delete:
+	kubectl delete -f ./k8s/ --ignore-not-found
 
-up:
-	docker compose up --build -d
+k8s-serve:
+	minikube service dashboard-service -n default
 
-down:
-	docker compose down
+k8s: k8s-build k8s-apply k8s-serve
 
-build:
-	docker build -t ${REG}/api:latest -f ./api/Containerfile .
-	docker build -t ${REG}/worker:latest -f ./worker/Containerfile .
-	docker build -t ${REG}/dashboard:latest -f ./dashboard/Containerfile .
-	docker push ${REG}/api:latest
-	docker push ${REG}/worker:latest
-	docker push ${REG}/dashboard:latest
-
-registry:
-	docker run -d --restart=always \
-	--name lan-registry \
-	-p 0.0.0.0:5000:5000 \
-	registry:3

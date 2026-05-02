@@ -36,7 +36,7 @@ class EventCreate(BaseModel):
     metadata: Optional[dict] = None
 
 
-@app.post("/api/v1/events")
+@app.post("/v1/events")
 def push_event(body: EventCreate):
     try:
         event = Event(
@@ -57,7 +57,7 @@ def push_event(body: EventCreate):
         raise HTTPException(status_code=503, detail="Service temporarily unavailable. Please try again.")
 
 
-@app.get("/api/v1/events")
+@app.get("/v1/events")
 def get_events(
     tenant_id: str = Query(..., max_length=64),
     event_type: Optional[str] = Query(None, max_length=128),

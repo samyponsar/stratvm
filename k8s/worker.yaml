@@ -16,7 +16,8 @@ spec:
     spec:
       containers:
       - name: worker
-        image: 127.0.0.1:5000/worker:latest
+        image: worker:latest
+        imagePullPolicy: IfNotPresent
         env:
         - name: POSTGRES_HOST
           valueFrom:
