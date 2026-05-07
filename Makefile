@@ -1,19 +1,17 @@
-.PHONY: k8s-build k8s-apply k8s-delete k8s-serve k8s
+.PHONY: k8s-build k8s-import k8s-apply k8s
 
 k8s-build:
-	eval $$(minikube docker-env) && \
-	docker build -t api:latest -f ./api/Containerfile . && \
-	docker build -t worker:latest -f ./worker/Containerfile . && \
-	docker build -t dashboard:latest -f ./dashboard/Containerfile .
+	docker buildx build -o type=oci,dest=api.tar -t api:latest -f ./api/Containerfile . && \
+	docker buildx build -o type=oci,dest=worker.tar -t worker:latest -f ./worker/Containerfile . && \
+	docker buildx build -o type=oci,dest=dashboard.tar -t dashboard:latest -f ./dashboard/Containerfile .
+
+k8s-import:
+	k3s ctr -n k8s.io image import api.tar
+	k3s ctr -n k8s.io image import worker.tar 
+	k3s ctr -n k8s.io image import dashboard.tar
 
 k8s-apply:
 	kubectl apply -f ./k8s/
 
-k8s-delete:
-	kubectl delete -f ./k8s/ --ignore-not-found
-
-k8s-serve:
-	minikube service dashboard-service -n default
-
-k8s: k8s-build k8s-apply k8s-serve
+k8s: k8s-build k8s-import k8s-apply
 
