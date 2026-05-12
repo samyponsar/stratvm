@@ -4,7 +4,7 @@ COPY ./dashboard/nginx.conf /etc/nginx/conf.d/default.conf
 COPY ./dashboard/web/ /usr/share/nginx/html/
 
 RUN printf '#!/bin/sh\n\
-while ! getent hosts api-service.default.svc.cluster.local >/dev/null 2>&1; do\n\
+while ! getent hosts api-service.stratvm.svc.cluster.local >/dev/null 2>&1; do\n\
   echo "Waiting for api-service..."; sleep 2; done\n\
 exec nginx -g "daemon off;"\n' > /docker-entrypoint.sh && chmod +x /docker-entrypoint.sh
 

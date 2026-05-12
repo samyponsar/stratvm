@@ -17,9 +17,21 @@ spec:
       containers:
       - name: api
         image: api:latest
-        imagePullPolicy: IfNotPresent
+        imagePullPolicy: Never
         ports:
         - containerPort: 8000
+        livenessProbe:
+          httpGet:
+            path: /livez
+            port: 8000
+          initialDelaySeconds: 10
+          periodSeconds: 15
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8000
+          initialDelaySeconds: 10
+          periodSeconds: 10
         env:
         - name: POSTGRES_HOST
           valueFrom:
@@ -72,6 +84,7 @@ kind: Service
 metadata:
   name: api-service
 spec:
+  type: LoadBalancer
   selector:
     app: api
   ports:

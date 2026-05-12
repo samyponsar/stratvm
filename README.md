@@ -2,18 +2,18 @@
 
 # stratvm — CKA-Ready Kubernetes Lab
 
-A hands-on Kubernetes training environment for practicing every domain of the **Certified Kubernetes Administrator (CKA)** exam, from cluster provisioning with kubeadm to observability and troubleshooting.
+An event processing pipeline created in order to practice every domain of the **Certified Kubernetes Administrator (CKA)** exam.
 
 ## Running the cluster
 
 ### Prerequisite
 
-minikube
+A running Kubernetes cluster.
 
 ### Run
 
 ```bash
-make k8s
+make 
 ```
 
 ## Event Pipeline

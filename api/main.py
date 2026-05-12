@@ -89,10 +89,15 @@ def get_events(
         raise HTTPException(status_code=503, detail="Service temporarily unavailable. Please try again.")
 
 
-@app.get("/health")
-def health():
+@app.get("/readyz")
+def readyz():
     redis_connected = redis_connection.ping()
     postgres_connected = not postgres_connection.closed
     if redis_connected and postgres_connected:
         return {"status": "ok"}
     raise HTTPException(status_code=503, detail="Service temporarily unavailable. Please try again.")
+
+
+@app.get("/livez")
+def livez():
+    return {"status": "ok"}

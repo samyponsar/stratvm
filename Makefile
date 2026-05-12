@@ -1,17 +1,22 @@
-.PHONY: k8s-build k8s-import k8s-apply k8s
+.PHONY: build import apply clean 
 
-k8s-build:
+all: build import apply clean
+
+build:
 	docker buildx build -o type=oci,dest=api.tar -t api:latest -f ./api/Containerfile . && \
 	docker buildx build -o type=oci,dest=worker.tar -t worker:latest -f ./worker/Containerfile . && \
 	docker buildx build -o type=oci,dest=dashboard.tar -t dashboard:latest -f ./dashboard/Containerfile .
 
-k8s-import:
+import:
 	k3s ctr -n k8s.io image import api.tar
 	k3s ctr -n k8s.io image import worker.tar 
 	k3s ctr -n k8s.io image import dashboard.tar
 
-k8s-apply:
-	kubectl apply -f ./k8s/
+apply:
+	-kubectl create ns stratvm
+	kubectl -n stratvm apply -f ./k8s/
+	
+clean:
+	rm -f *.tar
 
-k8s: k8s-build k8s-import k8s-apply
 

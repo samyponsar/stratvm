@@ -1,3 +1,31 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: postgres-pv
+spec:
+  capacity:
+    storage: 10Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: stratvm
+  hostPath:
+    path: /var/lib/stratvm/postgres-data
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-pvc
+  namespace: stratvm
+spec:
+  storageClassName: stratvm
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -31,10 +59,15 @@ spec:
               name: stratvm-secret
               key: POSTGRES_PASSWORD
         volumeMounts:
+        - name: postgres-data
+          mountPath: /var/lib/postgresql/18
         - name: init
           mountPath: /docker-entrypoint-initdb.d/init.sql
           subPath: postgres_init.sql
       volumes:
+      - name: postgres-data
+        persistentVolumeClaim:
+          claimName: postgres-pvc
       - name: init
         configMap:
           name: postgres-init
