@@ -1,7 +1,7 @@
 #!/bin/bash
-for i in $(seq 1 10); do
-  curl -s -X POST http://localhost:8000/v1/events \
+for i in $(seq 1 1000); do
+  curl -s -X POST http://localhost:8080/api/v1/events \
     -H "Content-Type: application/json" \
-    -d "{\"tenant_id\":\"t\",\"event_type\":\"test.event\",\"payload\":{\"iteration\":$i}}"
+    -d "{\"tenant_id\":\"acme\",\"event_type\":\"test.event\",\"payload\":{\"iteration\":$i}}"
   echo
 done

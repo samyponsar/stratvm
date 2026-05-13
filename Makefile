@@ -1,6 +1,6 @@
-.PHONY: build import apply clean 
+.PHONY: delete build import apply clean push-events
 
-all: build import apply clean
+all: delete build import clean apply forward
 
 build:
 	docker buildx build -o type=oci,dest=api.tar -t api:latest -f ./api/Containerfile . && \
@@ -12,11 +12,16 @@ import:
 	k3s ctr -n k8s.io image import worker.tar 
 	k3s ctr -n k8s.io image import dashboard.tar
 
-apply:
-	-kubectl create ns stratvm
-	kubectl -n stratvm apply -f ./k8s/
-	
 clean:
 	rm -f *.tar
 
 
+apply:
+	-kubectl create ns stratvm
+	kubectl -n stratvm apply -f ./k8s/
+
+delete:
+	-kubectl -n stratvm delete -f ./k8s/
+	
+forward:
+	kubectl port-forward svc/traefik -n kube-system 8080:80

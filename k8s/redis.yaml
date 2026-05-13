@@ -14,6 +14,7 @@ spec:
       labels:
         app: redis
     spec:
+      automountServiceAccountToken: false
       containers:
       - name: redis
         image: docker.io/library/redis:8-alpine
@@ -40,3 +41,39 @@ spec:
     - protocol: TCP
       port: 6379
       targetPort: 6379
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: redis-acl
+data:
+  acl.conf: |
+    user default off
+    user admin on >admin ~* &* +@all
+    user api on >api ~* &* +LPUSH +@connection
+    user worker on >worker ~* &* +BRPOP +@connection
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: redis-networkpolicy
+  namespace: stratvm
+spec:
+  podSelector:
+    matchLabels:
+      app: redis
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app: api
+    - podSelector:
+        matchLabels:
+          app: worker
+    ports:
+    - protocol: TCP
+      port: 6379
+  egress: []

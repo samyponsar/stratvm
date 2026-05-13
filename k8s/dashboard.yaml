@@ -5,7 +5,7 @@ metadata:
   labels:
     app: dashboard
 spec:
-  replicas: 1
+  replicas: 5
   selector:
     matchLabels:
       app: dashboard
@@ -14,6 +14,7 @@ spec:
       labels:
         app: dashboard
     spec:
+      automountServiceAccountToken: false
       containers:
       - name: dashboard
         image: dashboard:latest
@@ -26,10 +27,88 @@ kind: Service
 metadata:
   name: dashboard-service
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   selector:
     app: dashboard
   ports:
     - protocol: TCP
       port: 3000
       targetPort: 80
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: stratvm-ingress
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
+    traefik.ingress.kubernetes.io/router.middlewares: stratvm-api-stripprefix@kubernetescrd
+spec:
+  ingressClassName: traefik
+  rules:
+  - http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: dashboard-service
+            port:
+              number: 3000
+      - path: /api/
+        pathType: Prefix
+        backend:
+          service:
+            name: api-service
+            port:
+              number: 8000
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: api-stripprefix
+  namespace: stratvm
+spec:
+  stripPrefix:
+    prefixes:
+    - /api
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: dashboard-networkpolicy
+  namespace: stratvm
+spec:
+  podSelector:
+    matchLabels:
+      app: dashboard
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: kube-system
+      podSelector:
+        matchLabels:
+          app.kubernetes.io/name: traefik
+  egress:
+  - to:
+    - podSelector:
+        matchLabels:
+          app: api
+    ports:
+    - protocol: TCP
+      port: 8000
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: kube-system
+      podSelector:
+        matchLabels:
+          k8s-app: kube-dns
+    ports:
+    - protocol: UDP
+      port: 53
+    - protocol: TCP
+      port: 53

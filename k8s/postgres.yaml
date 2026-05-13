@@ -42,6 +42,7 @@ spec:
       labels:
         app: postgres
     spec:
+      automountServiceAccountToken: false
       containers:
       - name: postgres
         image: docker.io/library/postgres:18-alpine
@@ -84,3 +85,45 @@ spec:
     - protocol: TCP
       port: 5432
       targetPort: 5432
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-init
+data:
+  postgres_init.sql: |
+    CREATE TABLE events (
+        id              BIGSERIAL PRIMARY KEY,
+        tenant_id       VARCHAR(64) NOT NULL,
+        event_type      VARCHAR(128) NOT NULL,
+        received_at     TIMESTAMPTZ NOT NULL,
+        processed_at    TIMESTAMPTZ NOT NULL,
+        committed_at    TIMESTAMPTZ NOT NULL,
+        payload         JSONB,
+        metadata        JSONB
+    );
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: postgres-networkpolicy
+  namespace: stratvm
+spec:
+  podSelector:
+    matchLabels:
+      app: postgres
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app: api
+    - podSelector:
+        matchLabels:
+          app: worker
+    ports:
+    - protocol: TCP
+      port: 5432
+  egress: []

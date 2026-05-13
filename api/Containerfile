@@ -5,6 +5,8 @@ WORKDIR /app
 COPY shared/ ./shared/
 COPY api/ ./
 
+RUN uv sync
+
 EXPOSE 8000
 
 CMD ["uv", "run", "fastapi", "run", "--host", "0.0.0.0"]

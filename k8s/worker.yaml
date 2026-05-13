@@ -5,7 +5,7 @@ metadata:
   labels:
     app: worker
 spec:
-  replicas: 1
+  replicas: 3
   selector:
     matchLabels:
       app: worker
@@ -14,6 +14,7 @@ spec:
       labels:
         app: worker
     spec:
+      automountServiceAccountToken: false
       containers:
       - name: worker
         image: worker:latest
@@ -64,3 +65,44 @@ spec:
             secretKeyRef:
               name: stratvm-secret
               key: WORKER_REDIS_PASSWORD
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: worker-networkpolicy
+  namespace: stratvm
+spec:
+  podSelector:
+    matchLabels:
+      app: worker
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress: []
+  egress:
+  - to:
+    - podSelector:
+        matchLabels:
+          app: redis
+    ports:
+    - protocol: TCP
+      port: 6379
+  - to:
+    - podSelector:
+        matchLabels:
+          app: postgres
+    ports:
+    - protocol: TCP
+      port: 5432
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: kube-system
+      podSelector:
+        matchLabels:
+          k8s-app: kube-dns
+    ports:
+    - protocol: UDP
+      port: 53
+    - protocol: TCP
+      port: 53

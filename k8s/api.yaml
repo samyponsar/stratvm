@@ -5,7 +5,7 @@ metadata:
   labels:
     app: api
 spec:
-  replicas: 1
+  replicas: 5
   selector:
     matchLabels:
       app: api
@@ -14,6 +14,7 @@ spec:
       labels:
         app: api
     spec:
+      automountServiceAccountToken: false
       containers:
       - name: api
         image: api:latest
@@ -84,10 +85,61 @@ kind: Service
 metadata:
   name: api-service
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   selector:
     app: api
   ports:
     - protocol: TCP
       port: 8000
       targetPort: 8000
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: api-networkpolicy
+  namespace: stratvm
+spec:
+  podSelector:
+    matchLabels:
+      app: api
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: kube-system
+      podSelector:
+        matchLabels:
+          app.kubernetes.io/name: traefik
+    ports:
+    - protocol: TCP
+      port: 8000
+  egress:
+  - to:
+    - podSelector:
+        matchLabels:
+          app: redis
+    ports:
+    - protocol: TCP
+      port: 6379
+  - to:
+    - podSelector:
+        matchLabels:
+          app: postgres
+    ports:
+    - protocol: TCP
+      port: 5432
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: kube-system
+      podSelector:
+        matchLabels:
+          k8s-app: kube-dns
+    ports:
+    - protocol: UDP
+      port: 53
+    - protocol: TCP
+      port: 53
