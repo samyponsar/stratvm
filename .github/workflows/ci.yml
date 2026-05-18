@@ -75,10 +75,9 @@ jobs:
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/api:${{ env.IMAGE_TAG }},${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/api:latest
 
       - name: Scan api
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/api:${{ env.IMAGE_TAG }}
-          skip-dbs: "true"
           format: table
           exit-code: 1
           severity: HIGH,CRITICAL
@@ -93,10 +92,9 @@ jobs:
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/worker:${{ env.IMAGE_TAG }},${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/worker:latest
 
       - name: Scan worker
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/worker:${{ env.IMAGE_TAG }}
-          skip-dbs: "true"
           format: table
           exit-code: 1
           severity: HIGH,CRITICAL
@@ -111,10 +109,9 @@ jobs:
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/dashboard:${{ env.IMAGE_TAG }},${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/dashboard:latest
 
       - name: Scan dashboard
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/dashboard:${{ env.IMAGE_TAG }}
-          skip-dbs: "true"
           format: table
           exit-code: 1
           severity: HIGH,CRITICAL
