@@ -1,6 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  namespace: stratvm
   name: worker-deployment
   labels:
     app: worker
@@ -15,10 +16,41 @@ spec:
         app: worker
     spec:
       automountServiceAccountToken: false
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app: worker
+              topologyKey: kubernetes.io/hostname
       containers:
       - name: worker
-        image: ghcr.io/samyponsar/worker:latest
+        image: ghcr.io/samyponsar/worker:main
         imagePullPolicy: Always
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 65534
+          runAsGroup: 65534
+          readOnlyRootFilesystem: true
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+            ephemeral-storage: 50Mi
+          limits:
+            cpu: 300m
+            memory: 256Mi
+            ephemeral-storage: 100Mi
+        livenessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - echo ok
+          initialDelaySeconds: 10
+          periodSeconds: 15
         env:
         - name: POSTGRES_HOST
           valueFrom:
@@ -69,8 +101,8 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: worker-networkpolicy
   namespace: stratvm
+  name: worker-networkpolicy
 spec:
   podSelector:
     matchLabels:
@@ -106,3 +138,14 @@ spec:
       port: 53
     - protocol: TCP
       port: 53
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: worker-pdb
+  namespace: stratvm
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: worker

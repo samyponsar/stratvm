@@ -17,7 +17,6 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: postgres-pvc
-  namespace: stratvm
 spec:
   storageClassName: stratvm
   accessModes:
@@ -29,6 +28,7 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  namespace: stratvm
   name: postgres-deployment
   labels:
     app: postgres
@@ -46,6 +46,22 @@ spec:
       containers:
       - name: postgres
         image: docker.io/library/postgres:18-alpine
+        imagePullPolicy: Always
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 65534
+          runAsGroup: 65534
+          fsGroup: 65534
+          readOnlyRootFilesystem: true
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+            ephemeral-storage: 50Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+            ephemeral-storage: 100Mi
         ports:
         - containerPort: 5432
         env:
@@ -59,12 +75,30 @@ spec:
             secretKeyRef:
               name: stratvm-secret
               key: POSTGRES_PASSWORD
+        livenessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - test -d /var/lib/postgresql/18/base
+          initialDelaySeconds: 15
+          periodSeconds: 15
+        readinessProbe:
+          exec:
+            command:
+            - pg_isready
+            - -U
+            - $(POSTGRES_USER)
+          initialDelaySeconds: 15
+          periodSeconds: 10
         volumeMounts:
         - name: postgres-data
           mountPath: /var/lib/postgresql/18
         - name: init
           mountPath: /docker-entrypoint-initdb.d/init.sql
           subPath: postgres_init.sql
+        - name: tmp
+          mountPath: /tmp
       volumes:
       - name: postgres-data
         persistentVolumeClaim:
@@ -72,11 +106,14 @@ spec:
       - name: init
         configMap:
           name: postgres-init
+      - name: tmp
+        emptyDir: {}
 
 ---
 apiVersion: v1
 kind: Service
 metadata:
+  namespace: stratvm
   name: postgres-service
 spec:
   selector:
@@ -89,6 +126,7 @@ spec:
 apiVersion: v1
 kind: ConfigMap
 metadata:
+  namespace: stratvm
   name: postgres-init
 data:
   postgres_init.sql: |
@@ -106,8 +144,8 @@ data:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: postgres-networkpolicy
   namespace: stratvm
+  name: postgres-networkpolicy
 spec:
   podSelector:
     matchLabels:

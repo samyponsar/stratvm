@@ -1,6 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  namespace: stratvm
   name: api-deployment
   labels:
     app: api
@@ -15,10 +16,33 @@ spec:
         app: api
     spec:
       automountServiceAccountToken: false
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app: api
+              topologyKey: kubernetes.io/hostname
       containers:
       - name: api
-        image: ghcr.io/samyponsar/api:latest
+        image: ghcr.io/samyponsar/api:main
         imagePullPolicy: Always
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 65534
+          runAsGroup: 65534
+          readOnlyRootFilesystem: true
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+            ephemeral-storage: 50Mi
+          limits:
+            cpu: 300m
+            memory: 256Mi
+            ephemeral-storage: 100Mi
         ports:
         - containerPort: 8000
         livenessProbe:
@@ -83,6 +107,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
+  namespace: stratvm
   name: api-service
 spec:
   type: ClusterIP
@@ -143,3 +168,14 @@ spec:
       port: 53
     - protocol: TCP
       port: 53
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: api-pdb
+  namespace: stratvm
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: api

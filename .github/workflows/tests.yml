@@ -1,0 +1,44 @@
+name: Tests
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'shared/**'
+      - 'api/**'
+      - 'worker/**'
+      - 'dashboard/**'
+      - '*.py'
+      - 'k8s/**'
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install ruff
+        run: pip install ruff
+
+      - name: Run ruff check
+        run: ruff check .
+
+  kube-score:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download kube-score
+        run: |
+          curl -sL https://github.com/zegl/kube-score/releases/download/v1.20.0/kube-score_1.20.0_linux_amd64 -o kube-score
+          chmod +x kube-score
+
+      - name: Score K8s manifests
+        run: ./kube-score score k8s/

@@ -8,6 +8,7 @@ on:
       - 'api/**'
       - 'worker/**'
       - 'dashboard/**'
+      - 'Containerfile'
 
 env:
   REGISTRY: ghcr.io
@@ -23,15 +24,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Get version
-        id: version
-        run: |
-          if [ "${{ github.ref_type }}" = "tag" ]; then
-            echo "version=${{ github.ref_name }}" >> $GITHUB_OUTPUT
-          else
-            echo "version=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
-          fi
 
       - name: Log in to GHCR
         uses: docker/login-action@v3
@@ -50,9 +42,7 @@ jobs:
           file: ./api/Containerfile
           outputs: type=registry
           push: true
-          tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/api:latest
-            ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/api:${{ steps.version.outputs.version }}
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/api:latest
 
       - name: Build and push worker
         uses: docker/build-push-action@v6
@@ -61,9 +51,7 @@ jobs:
           file: ./worker/Containerfile
           outputs: type=registry
           push: true
-          tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/worker:latest
-            ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/worker:${{ steps.version.outputs.version }}
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/worker:latest
 
       - name: Build and push dashboard
         uses: docker/build-push-action@v6
@@ -72,6 +60,4 @@ jobs:
           file: ./dashboard/Containerfile
           outputs: type=registry
           push: true
-          tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/dashboard:latest
-            ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/dashboard:${{ steps.version.outputs.version }}
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/dashboard:latest

@@ -1,6 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  namespace: stratvm
   name: dashboard-deployment
   labels:
     app: dashboard
@@ -15,16 +16,51 @@ spec:
         app: dashboard
     spec:
       automountServiceAccountToken: false
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app: dashboard
+              topologyKey: kubernetes.io/hostname
       containers:
       - name: dashboard
-        image: ghcr.io/samyponsar/dashboard:latest
+        image: ghcr.io/samyponsar/dashboard:main
         imagePullPolicy: Always
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 65534
+          runAsGroup: 65534
+          readOnlyRootFilesystem: true
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+            ephemeral-storage: 25Mi
+          limits:
+            cpu: 150m
+            memory: 128Mi
+            ephemeral-storage: 50Mi
         ports:
         - containerPort: 80
+        livenessProbe:
+          tcpSocket:
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 15
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 10
 ---
 apiVersion: v1
 kind: Service
 metadata:
+  namespace: stratvm
   name: dashboard-service
 spec:
   type: ClusterIP
@@ -38,6 +74,7 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
+  namespace: stratvm
   name: stratvm-ingress
   annotations:
     traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
@@ -112,3 +149,14 @@ spec:
       port: 53
     - protocol: TCP
       port: 53
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: dashboard-pdb
+  namespace: stratvm
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: dashboard

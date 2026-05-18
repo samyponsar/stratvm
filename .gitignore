@@ -1,6 +1,5 @@
 **/__pycache__
 **/.venv
 **/.ruff_cache
-/NOTES.md
-/TODO.md
 *.tar
+CURRICULUM.md

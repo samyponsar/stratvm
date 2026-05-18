@@ -1,8 +1,8 @@
 <img src="stratvm-white.svg" alt="stratvm logo" width="200">
 
-# stratvm — CKA-Ready Kubernetes Lab
+# stratvm — Event Processing Pipeline
 
-An event processing pipeline running entirely on Kubernetes. Built to practice every domain of the **Certified Kubernetes Administrator (CKA)** exam.
+Multi-service event processing system deployed on Kubernetes.
 
 ## Event Pipeline
 
@@ -10,54 +10,16 @@ An event processing pipeline running entirely on Kubernetes. Built to practice e
 
 └─ GET → **API** → **PostgreSQL** → **Dashboard**
 
-## Tech Stack
+## Configuration
 
-| Layer | Technology |
-|---|---|
-| Language | Python 3.14 |
-| API | FastAPI |
-| Queue | Redis 8 (with ACL-based auth per service) |
-| Database | PostgreSQL 18 (JSONB columns for extensibility) |
-| Frontend | Nginx Alpine (static HTML/JS) |
-| Orchestration | Kubernetes (k3s) |
-| Ingress | Traefik |
-| CI/CD | GitHub Actions |
-| Container Registry | GHCR |
-| Image Build | Docker Buildx, multi-context builds |
+All resources are deployed in the `stratvm` **namespace** with a **default-deny ingress** baseline — only Traefik can reach the api and dashboard, while the worker receives no ingress at all. Egress is restricted per service: api talks to redis, postgres, and kube-dns; dashboard reaches only the api; postgres and redis accept connections from no outbound traffic.
 
-## Kubernetes Features Used
+Configuration is externalized through **ConfigMaps** (service endpoints, Redis ACL, PostgreSQL init SQL) while credentials stay in **Kubernetes Secrets** referenced via `secretKeyRef`. PostgreSQL data persists on a 10Gi **hostPath PersistentVolume** with a **PVC** using Retain reclaim policy; a writable **emptyDir** backs `/tmp` for the container's **readOnlyRootFilesystem**.
 
-- **Secrets & ConfigMaps** for all configuration (DB credentials, Redis ACL, service endpoints)
-- **NetworkPolicies** — default-deny ingress per namespace, explicit allow rules per service (ingress/egress)
-- **PersistentVolumes & PVCs** with `hostPath` for PostgreSQL data retention
-- **Init scripts** via ConfigMap-mounted SQL for automatic DB schema creation
-- **Health probes** — `/livez` for liveness, `/readyz` for readiness (checks Redis and PostgreSQL connectivity)
-- **imagePullPolicy: Always** with tagged images from GHCR
-- **Service accounts** disabled per pod (`automountServiceAccountToken: false`)
+Every pod runs as non-root (**runAsNonRoot**, UID/GID `65534`) with no auto-mounted service accounts. Stateless services — api (5 replicas), dashboard (5), worker (3) — each have a **PodDisruptionBudget** (minAvailable: 1) and **pod anti-affinity** (preferred, hostname) to spread across nodes. All containers declare separate **liveness** and **readiness probes** (httpGet, tcpSocket, exec) and have **cpu**, **memory**, and **ephemeral-storage** requests and limits. CI builds on every `main` push and publishes tagged images to **GHCR** with `imagePullPolicy: Always`.
 
-## Quickstart
-
-Images are built by the CI pipeline on push to `main` and pushed to GHCR. To deploy locally:
+## Deploy
 
 ```bash
-make
+make          # delete + apply manifests
 ```
-
-This runs:
-1. `kubectl delete -f ./k8s/` — remove existing resources
-2. `kubectl apply -f ./k8s/` — apply all manifests
-3. Requires kubectl configured to talk to your cluster (k3s, kind, etc.)
-
-To build and import images manually:
-
-```bash
-make build-local import-local apply
-```
-
-## CI/CD
-
-The GitHub Actions workflow at `.github/workflows/build.yml`:
-- Triggers on push to `main`
-- Builds `api`, `worker`, and `dashboard` images using Docker Buildx
-- Pushes to `ghcr.io/samyponsar/` with `latest` and git SHA tags
-- Tagged releases get the version tag (e.g. `v1.0.0`)

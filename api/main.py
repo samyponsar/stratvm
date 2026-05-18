@@ -81,11 +81,11 @@ def get_events(
                 try:
                     validated = Event(**event_dict)
                     result.append(validated.model_dump())
-                except Exception as e:
+                except Exception:
                     logger.critical(f"Event with id {event_dict.id} failed pydantic validation.")
                     continue
             return result
-    except Exception as e:
+    except Exception:
         raise HTTPException(status_code=503, detail="Service temporarily unavailable. Please try again.")
 
 

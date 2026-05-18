@@ -1,6 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  namespace: stratvm
   name: redis-deployment
   labels:
     app: redis
@@ -18,7 +19,34 @@ spec:
       containers:
       - name: redis
         image: docker.io/library/redis:8-alpine
+        imagePullPolicy: Always
         command: ["redis-server", "--aclfile", "/etc/redis/acl.conf"]
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 65534
+          runAsGroup: 65534
+          readOnlyRootFilesystem: true
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+            ephemeral-storage: 25Mi
+          limits:
+            cpu: 150m
+            memory: 128Mi
+            ephemeral-storage: 50Mi
+        livenessProbe:
+          exec:
+            command:
+            - redis-cli
+            - ping
+          initialDelaySeconds: 10
+          periodSeconds: 15
+        readinessProbe:
+          tcpSocket:
+            port: 6379
+          initialDelaySeconds: 10
+          periodSeconds: 10
         ports:
         - containerPort: 6379
         volumeMounts:
@@ -33,6 +61,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
+  namespace: stratvm
   name: redis-service
 spec:
   selector:
@@ -45,6 +74,7 @@ spec:
 apiVersion: v1
 kind: ConfigMap
 metadata:
+  namespace: stratvm
   name: redis-acl
 data:
   acl.conf: |
@@ -56,8 +86,8 @@ data:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: redis-networkpolicy
   namespace: stratvm
+  name: redis-networkpolicy
 spec:
   podSelector:
     matchLabels:
