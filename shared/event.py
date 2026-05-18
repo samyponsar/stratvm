@@ -1,15 +1,18 @@
 from datetime import datetime
 from typing import Optional
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 import re
 
 
 class Event(BaseModel):
+    model_config = ConfigDict(extra='ignore')
+
     tenant_id: str = Field(..., max_length=64)
     event_type: str = Field(..., max_length=128)
+    id: Optional[int] = None
     received_at: datetime
-    processed_at: Optional[datetime] = None
-    committed_at: Optional[datetime] = None
+    processed_at: datetime
+    committed_at: datetime
     payload: Optional[dict] = None
     metadata: Optional[dict] = None
 

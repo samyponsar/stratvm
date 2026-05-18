@@ -1,0 +1,120 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/**'
+      - 'shared/**'
+      - 'api/**'
+      - 'worker/**'
+      - 'dashboard/**'
+      - '*.py'
+      - 'k8s/**'
+      - '*/Containerfile'
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_OWNER: samyponsar
+  IMAGE_TAG: ${{ github.sha }}
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install ruff
+        run: pip install ruff
+
+      - name: Run ruff check
+        run: ruff check .
+
+  kube-score:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download kube-score
+        run: |
+          curl -sL https://github.com/zegl/kube-score/releases/download/v1.20.0/kube-score_1.20.0_linux_amd64 -o kube-score
+          chmod +x kube-score
+
+      - name: Score K8s manifests
+        run: ./kube-score score k8s/*
+
+  build-and-scan:
+    needs: [lint, kube-score]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push api
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./api/Containerfile
+          outputs: type=registry
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/api:${{ env.IMAGE_TAG }},${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/api:latest
+
+      - name: Scan api
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/api:${{ env.IMAGE_TAG }}
+          skip-dbs: "true"
+          format: table
+          exit-code: 1
+          severity: HIGH,CRITICAL
+
+      - name: Build and push worker
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./worker/Containerfile
+          outputs: type=registry
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/worker:${{ env.IMAGE_TAG }},${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/worker:latest
+
+      - name: Scan worker
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/worker:${{ env.IMAGE_TAG }}
+          skip-dbs: "true"
+          format: table
+          exit-code: 1
+          severity: HIGH,CRITICAL
+
+      - name: Build and push dashboard
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./dashboard/Containerfile
+          outputs: type=registry
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/dashboard:${{ env.IMAGE_TAG }},${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/dashboard:latest
+
+      - name: Scan dashboard
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/dashboard:${{ env.IMAGE_TAG }}
+          skip-dbs: "true"
+          format: table
+          exit-code: 1
+          severity: HIGH,CRITICAL

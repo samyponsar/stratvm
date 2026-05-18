@@ -40,7 +40,12 @@
             font-size: 0.85rem;
             overflow-x: auto;
         }
+        .json-key {
+            color: #0366d6;
+            font-weight: 600;
+        }
     </style>
+</head>
 <body>
 	<header>
 		<img src="stratvm-white.svg" width=200 height=140>
@@ -79,8 +84,8 @@
             return events.map((event, idx) => `
                 <details>
                     <summary>
+                        <span style="width:100%; text-align: right; color: #666; font-size: 0.8rem; font-weight: 400;">${event.received_at}</span>
                         <span style="width:100%;" class="event-header">${event.event_type}</span>
-                        <span style="width:100%; text-align: right;c color: #666; font-size: 0.8rem; font-weight: 400;">${event.received_at}</span>
                     </summary>
                     <pre style="background: black">${renderJSON(event)}</pre>
                 </details>
@@ -93,9 +98,14 @@
             const count = document.getElementById("count").value;
             let url = `/api/v1/events?tenant_id=${encodeURIComponent(tenant)}&count=${count}`;
             if (type) url += `&event_type=${encodeURIComponent(type)}`;
-            const res = await fetch(url);
-            const data = await res.json();
-            document.getElementById("result").innerHTML = renderEvents(data);
+            try {
+                const res = await fetch(url);
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const data = await res.json();
+                document.getElementById("result").innerHTML = renderEvents(data);
+            } catch (err) {
+                document.getElementById("result").innerHTML = `<p style="color: red;">Error: ${err.message}</p>`;
+            }
         });
     </script>
 </body>

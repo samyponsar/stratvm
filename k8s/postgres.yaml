@@ -43,6 +43,11 @@ spec:
         app: postgres
     spec:
       automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        runAsGroup: 65534
+        fsGroup: 65534
       containers:
       - name: postgres
         image: docker.io/library/postgres:18-alpine
@@ -51,7 +56,6 @@ spec:
           runAsNonRoot: true
           runAsUser: 65534
           runAsGroup: 65534
-          fsGroup: 65534
           readOnlyRootFilesystem: true
         resources:
           requests:
@@ -75,12 +79,14 @@ spec:
             secretKeyRef:
               name: stratvm-secret
               key: POSTGRES_PASSWORD
+        - name: PGDATA
+          value: /var/lib/postgresql/18/docker
         livenessProbe:
           exec:
             command:
             - sh
             - -c
-            - test -d /var/lib/postgresql/18/base
+            - test -d /var/lib/postgresql/18/docker
           initialDelaySeconds: 15
           periodSeconds: 15
         readinessProbe:
@@ -93,12 +99,14 @@ spec:
           periodSeconds: 10
         volumeMounts:
         - name: postgres-data
-          mountPath: /var/lib/postgresql/18
+          mountPath: /var/lib/postgresql/18/docker
         - name: init
           mountPath: /docker-entrypoint-initdb.d/init.sql
           subPath: postgres_init.sql
         - name: tmp
           mountPath: /tmp
+        - name: run
+          mountPath: /var/run/postgresql
       volumes:
       - name: postgres-data
         persistentVolumeClaim:
@@ -108,7 +116,8 @@ spec:
           name: postgres-init
       - name: tmp
         emptyDir: {}
-
+      - name: run
+        emptyDir: {}
 ---
 apiVersion: v1
 kind: Service
@@ -140,6 +149,8 @@ data:
         payload         JSONB,
         metadata        JSONB
     );
+    CREATE INDEX idx_events_tenant_id ON events (tenant_id);
+    CREATE INDEX idx_events_tenant_event_type ON events (tenant_id, event_type);
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -165,3 +176,14 @@ spec:
     - protocol: TCP
       port: 5432
   egress: []
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: postgres-pdb
+  namespace: stratvm
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: postgres

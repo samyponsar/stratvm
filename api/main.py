@@ -1,25 +1,43 @@
 from datetime import UTC, datetime
 from typing import Optional
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import Depends, FastAPI, HTTPException, Query
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel, Field
 import logging
 import os
 import redis
+import redis.retry
 import psycopg
+import psycopg.pool
+
 from shared.event import Event
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-redis_connection = redis.Redis(
+REDIS_RETRY = redis.retry.Retry(backoff=redis.backoff.exponential, retries=3)
+REDIS_CONNECTION = redis.Redis(
     host=os.getenv("REDIS_HOST"),
     port=int(os.getenv("REDIS_PORT")),
     username=os.getenv("REDIS_USER"),
     password=os.getenv("REDIS_PASSWORD"),
+    retry=REDIS_RETRY,
+    socket_timeout=5,
+    socket_connect_timeout=5,
 )
 
-postgres_connection = psycopg.connect(
-    f"dbname={os.getenv('POSTGRES_DB')} user={os.getenv('POSTGRES_USER')} password={os.getenv('POSTGRES_PASSWORD')} host={os.getenv('POSTGRES_HOST')} port={os.getenv('POSTGRES_PORT')}"
+POSTGRES_POOL = psycopg.pool.ConnectionPool(
+    conninfo=(
+        f"dbname={os.getenv('POSTGRES_DB')} "
+        f"user={os.getenv('POSTGRES_USER')} "
+        f"password={os.getenv('POSTGRES_PASSWORD')} "
+        f"host={os.getenv('POSTGRES_HOST')} "
+        f"port={os.getenv('POSTGRES_PORT')}"
+    ),
+    min_size=2,
+    max_size=10,
+    connect_timeout=5,
+    timeout=10,
 )
 
 app = FastAPI(
@@ -27,7 +45,18 @@ app = FastAPI(
     description="Provides endpoints for clients to post their events to, and for their dashboard to retrieve them.",
     version="0.1.0",
     contact={"name": "Admin", "email": "samy.ponsar@proton.me"},
+    dependencies=[Depends(HTTPBearer(auto_error=False))],
 )
+
+
+def api_key_required(credentials: HTTPAuthorizationCredentials = Depends(HTTPBearer(auto_error=False))):
+    if credentials is None:
+        return True
+    expected = os.getenv("API_KEY")
+    if credentials.credentials == expected:
+        return True
+    raise HTTPException(status_code=401, detail="Invalid API key")
+
 
 class EventCreate(BaseModel):
     tenant_id: str = Field(..., max_length=64)
@@ -36,8 +65,8 @@ class EventCreate(BaseModel):
     metadata: Optional[dict] = None
 
 
-@app.post("/v1/events")
-def push_event(body: EventCreate):
+@app.post("/v1/events", status_code=201)
+def push_event(body: EventCreate, _ = Depends(api_key_required)):
     try:
         event = Event(
             tenant_id=body.tenant_id,
@@ -50,7 +79,7 @@ def push_event(body: EventCreate):
         logger.error(f"{e}")
         raise HTTPException(status_code=422, detail=str(e))
     try:
-        redis_connection.lpush("events", event.model_dump_json())
+        REDIS_CONNECTION.lpush("events", event.model_dump_json())
         return event
     except Exception as e:
         logger.error(f"{e}")
@@ -71,28 +100,33 @@ def get_events(
             params.append(event_type)
         query += " ORDER BY received_at DESC LIMIT %s"
         params.append(count)
-        with postgres_connection.cursor() as cursor:
-            cursor.execute(query, params)
-            rows = cursor.fetchall()
-            columns = [desc[0] for desc in cursor.description]
-            result = []
-            for row in rows:
-                event_dict = dict(zip(columns, row))
-                try:
+        with POSTGRES_POOL.connection() as conn:
+            with conn.cursor() as cursor:
+                cursor.execute(query, params)
+                rows = cursor.fetchall()
+                columns = [desc[0] for desc in cursor.description]
+                result = []
+                for row in rows:
+                    event_dict = dict(zip(columns, row))
                     validated = Event(**event_dict)
                     result.append(validated.model_dump())
-                except Exception:
-                    logger.critical(f"Event with id {event_dict.id} failed pydantic validation.")
-                    continue
-            return result
+                return result
     except Exception:
         raise HTTPException(status_code=503, detail="Service temporarily unavailable. Please try again.")
 
 
 @app.get("/readyz")
 def readyz():
-    redis_connected = redis_connection.ping()
-    postgres_connected = not postgres_connection.closed
+    try:
+        redis_connected = REDIS_CONNECTION.ping()
+    except redis.exceptions.RedisError:
+        redis_connected = False
+    try:
+        POSTGRES_POOL.connection()
+        postgres_connected = True
+    except Exception:
+        postgres_connected = False
+
     if redis_connected and postgres_connected:
         return {"status": "ok"}
     raise HTTPException(status_code=503, detail="Service temporarily unavailable. Please try again.")

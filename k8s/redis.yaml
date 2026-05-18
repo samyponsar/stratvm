@@ -16,11 +16,22 @@ spec:
         app: redis
     spec:
       automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        runAsGroup: 65534
       containers:
       - name: redis
         image: docker.io/library/redis:8-alpine
         imagePullPolicy: Always
-        command: ["redis-server", "--aclfile", "/etc/redis/acl.conf"]
+        args:
+        - "redis-server"
+        - "--aclfile"
+        - "/etc/redis/acl.conf"
+        - "--maxmemory"
+        - "64mb"
+        - "--maxmemory-policy"
+        - "allkeys-lru"
         securityContext:
           runAsNonRoot: true
           runAsUser: 65534
@@ -53,10 +64,14 @@ spec:
         - name: acl
           mountPath: /etc/redis/acl.conf
           subPath: acl.conf
+        - name: data
+          mountPath: /data
       volumes:
       - name: acl
         configMap:
           name: redis-acl
+      - name: data
+        emptyDir: {}
 ---
 apiVersion: v1
 kind: Service
@@ -107,3 +122,14 @@ spec:
     - protocol: TCP
       port: 6379
   egress: []
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: redis-pdb
+  namespace: stratvm
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: redis

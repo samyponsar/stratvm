@@ -103,6 +103,11 @@ spec:
             secretKeyRef:
               name: stratvm-secret
               key: API_REDIS_PASSWORD
+        - name: API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: stratvm-secret
+              key: API_KEY
 ---
 apiVersion: v1
 kind: Service

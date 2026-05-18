@@ -46,11 +46,18 @@ spec:
         livenessProbe:
           exec:
             command:
-            - sh
-            - -c
-            - echo ok
+            - redis-cli
+            - ping
           initialDelaySeconds: 10
           periodSeconds: 15
+        readinessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - redis-cli ping && pg_isready -U $POSTGRES_USER
+          initialDelaySeconds: 10
+          periodSeconds: 10
         env:
         - name: POSTGRES_HOST
           valueFrom:

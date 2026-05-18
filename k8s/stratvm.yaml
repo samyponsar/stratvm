@@ -4,12 +4,12 @@ metadata:
   name: stratvm-secret
 type: Opaque
 data:
-  POSTGRES_USER: c3RyYXR2bQ==
-  POSTGRES_PASSWORD: c3RyYXR2bQ==
+  POSTGRES_USER: YWRtaW4=
+  POSTGRES_PASSWORD: U1VwZXJTZWNyZXQxMjMh
   API_REDIS_USER: YXBp
-  API_REDIS_PASSWORD: YXBp
+  API_REDIS_PASSWORD: QVBJUmVkaXNQYXNzMTIzIQ==
   WORKER_REDIS_USER: d29ya2Vy
-  WORKER_REDIS_PASSWORD: d29ya2Vy
+  WORKER_REDIS_PASSWORD: V29ya2VyUmVkaXNQYXNzMTIzIQ==
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -21,6 +21,7 @@ data:
   POSTGRES_DB: stratvm
   REDIS_HOST: redis-service
   REDIS_PORT: "6379"
+  API_KEY: c3VwZXJzZWNyZXRhcGlrZXk=
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -31,3 +32,10 @@ spec:
   podSelector: {}
   policyTypes:
   - Ingress
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: stratvm
+  labels:
+    pod-security.kubernetes.io/enforce: baseline
