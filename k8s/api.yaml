@@ -17,8 +17,8 @@ spec:
       automountServiceAccountToken: false
       containers:
       - name: api
-        image: api:latest
-        imagePullPolicy: Never
+        image: ghcr.io/samyponsar/api:latest
+        imagePullPolicy: Always
         ports:
         - containerPort: 8000
         livenessProbe:

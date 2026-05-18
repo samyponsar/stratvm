@@ -1,6 +1,6 @@
-.PHONY: delete build import apply clean push-events
+.PHONY: delete build import apply clean
 
-all: delete build import clean apply forward
+all: delete apply
 
 build:
 	docker buildx build -o type=oci,dest=api.tar -t api:latest -f ./api/Containerfile . && \
@@ -22,6 +22,3 @@ apply:
 
 delete:
 	-kubectl -n stratvm delete -f ./k8s/
-	
-forward:
-	kubectl port-forward svc/traefik -n kube-system 8080:80

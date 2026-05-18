@@ -17,8 +17,8 @@ spec:
       automountServiceAccountToken: false
       containers:
       - name: worker
-        image: worker:latest
-        imagePullPolicy: Never
+        image: ghcr.io/samyponsar/worker:latest
+        imagePullPolicy: Always
         env:
         - name: POSTGRES_HOST
           valueFrom:

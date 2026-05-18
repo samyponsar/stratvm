@@ -17,8 +17,8 @@ spec:
       automountServiceAccountToken: false
       containers:
       - name: dashboard
-        image: dashboard:latest
-        imagePullPolicy: Never
+        image: ghcr.io/samyponsar/dashboard:latest
+        imagePullPolicy: Always
         ports:
         - containerPort: 80
 ---
@@ -54,7 +54,7 @@ spec:
             name: dashboard-service
             port:
               number: 3000
-      - path: /api/
+      - path: /api
         pathType: Prefix
         backend:
           service:
