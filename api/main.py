@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field
 import logging
 import os
 import redis
+from redis.exceptions import RedisError
 import redis.retry
 from psycopg_pool import ConnectionPool
 
@@ -29,7 +30,7 @@ for var in REQUIRED_ENV:
     if not os.getenv(var):
         raise RuntimeError(f"Missing required environment variable: {var}")
 
-REDIS_RETRY = redis.retry.Retry(backoff=redis.backoff.exponential, retries=3)
+REDIS_RETRY = redis.retry.Retry(backoff=redis.backoff.ExponentialBackoff(), retries=3)
 REDIS_CONNECTION = redis.Redis(
     host=os.getenv("REDIS_HOST"),
     port=int(os.getenv("REDIS_PORT")),
@@ -50,7 +51,7 @@ POSTGRES_POOL = ConnectionPool(
     ),
     min_size=2,
     max_size=10,
-    connect_timeout=5,
+    reconnect_timeout=5,
     timeout=10,
 )
 
@@ -141,7 +142,7 @@ def get_events(
 def readyz():
     try:
         redis_connected = REDIS_CONNECTION.ping()
-    except redis.exceptions.RedisError:
+    except RedisError:
         redis_connected = False
     postgres_connected = False
     try:

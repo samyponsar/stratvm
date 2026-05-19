@@ -3,7 +3,6 @@ import logging
 import os
 import signal
 import time
-import traceback
 from datetime import UTC, datetime
 from psycopg_pool import ConnectionPool
 from psycopg.errors import OperationalError
@@ -30,7 +29,7 @@ for var in REQUIRED_ENV:
     if not os.getenv(var):
         raise RuntimeError(f"Missing required environment variable: {var}")
 
-REDIS_RETRY = redis.retry.Retry(backoff=redis.backoff.exponential, retries=3)
+REDIS_RETRY = redis.retry.Retry(backoff=redis.backoff.ExponentialBackoff(), retries=3)
 REDIS_CONNECTION = redis.Redis(
     host=os.getenv("REDIS_HOST"),
     port=int(os.getenv("REDIS_PORT")),
@@ -52,7 +51,7 @@ POSTGRES_POOL = ConnectionPool(
     ),
     min_size=2,
     max_size=10,
-    connect_timeout=5,
+    reconnect_timeout=5,
     timeout=10,
 )
 
@@ -113,10 +112,8 @@ def flush_events():
                 f"Postgres write failed (attempt {attempt + 1}/{max_retries}): {e}. Retrying in {wait}s..."
             )
             time.sleep(wait)
-        except Exception as e:
-            logger.critical(
-                f"Unexpected error flushing events: {e}\n{traceback.format_exc()}"
-            )
+        except Exception:
+            logger.critical("Unexpected error flushing events", exc_info=True)
             pending_events.clear()
             return
 
