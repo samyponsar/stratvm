@@ -1,4 +1,4 @@
-FROM ghcr.io/astral-sh/uv:0.9.18-alpine
+FROM ghcr.io/astral-sh/uv:alpine
 
 WORKDIR /app
 
