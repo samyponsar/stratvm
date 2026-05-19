@@ -8,4 +8,3 @@
 **/.gitignore
 **/*.tar
 node_modules
-uv.lock
