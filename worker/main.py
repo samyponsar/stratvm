@@ -15,8 +15,17 @@ from shared.event import Event
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-REQUIRED_ENV = ["REDIS_HOST", "REDIS_PORT", "REDIS_USER", "REDIS_PASSWORD",
-                "POSTGRES_HOST", "POSTGRES_PORT", "POSTGRES_DB", "POSTGRES_USER", "POSTGRES_PASSWORD"]
+REQUIRED_ENV = [
+    "REDIS_HOST",
+    "REDIS_PORT",
+    "REDIS_USER",
+    "REDIS_PASSWORD",
+    "POSTGRES_HOST",
+    "POSTGRES_PORT",
+    "POSTGRES_DB",
+    "POSTGRES_USER",
+    "POSTGRES_PASSWORD",
+]
 for var in REQUIRED_ENV:
     if not os.getenv(var):
         raise RuntimeError(f"Missing required environment variable: {var}")
@@ -99,17 +108,21 @@ def flush_events():
             return
 
         except psycopg.OperationalError as e:
-            wait = min(2 ** attempt, 30)
+            wait = min(2**attempt, 30)
             logger.warning(
                 f"Postgres write failed (attempt {attempt + 1}/{max_retries}): {e}. Retrying in {wait}s..."
             )
             time.sleep(wait)
         except Exception as e:
-            logger.critical(f"Unexpected error flushing events: {e}\n{traceback.format_exc()}")
+            logger.critical(
+                f"Unexpected error flushing events: {e}\n{traceback.format_exc()}"
+            )
             pending_events.clear()
             return
 
-    logger.error(f"Failed to flush {len(pending_events)} events after {max_retries} attempts")
+    logger.error(
+        f"Failed to flush {len(pending_events)} events after {max_retries} attempts"
+    )
     pending_events.clear()
 
 

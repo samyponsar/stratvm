@@ -5,7 +5,7 @@ import re
 
 
 class Event(BaseModel):
-    model_config = ConfigDict(extra='ignore')
+    model_config = ConfigDict(extra="ignore")
 
     tenant_id: str = Field(..., max_length=64)
     event_type: str = Field(..., max_length=128)
@@ -19,7 +19,7 @@ class Event(BaseModel):
     @field_validator("event_type")
     @classmethod
     def check_event_type(cls, v: str) -> str:
-        if not re.match(r'^[a-z][a-z0-9._-]*$', v):
+        if not re.match(r"^[a-z][a-z0-9._-]*$", v):
             raise ValueError(
                 "event_type must start with a letter and contain only a-z0-9._-"
             )

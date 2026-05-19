@@ -15,8 +15,17 @@ from shared.event import Event
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-REQUIRED_ENV = ["REDIS_HOST", "REDIS_PORT", "REDIS_USER", "REDIS_PASSWORD",
-                "POSTGRES_HOST", "POSTGRES_PORT", "POSTGRES_DB", "POSTGRES_USER", "POSTGRES_PASSWORD"]
+REQUIRED_ENV = [
+    "REDIS_HOST",
+    "REDIS_PORT",
+    "REDIS_USER",
+    "REDIS_PASSWORD",
+    "POSTGRES_HOST",
+    "POSTGRES_PORT",
+    "POSTGRES_DB",
+    "POSTGRES_USER",
+    "POSTGRES_PASSWORD",
+]
 for var in REQUIRED_ENV:
     if not os.getenv(var):
         raise RuntimeError(f"Missing required environment variable: {var}")
@@ -55,7 +64,9 @@ app = FastAPI(
 
 
 def api_key_required(
-    credentials: Optional[HTTPAuthorizationCredentials] = Depends(HTTPBearer(auto_error=False)),
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(
+        HTTPBearer(auto_error=False)
+    ),
 ):
     if credentials is None:
         raise HTTPException(status_code=401, detail="API key required")
@@ -90,7 +101,9 @@ def push_event(body: EventCreate, _=Depends(api_key_required)):
         return event
     except Exception as e:
         logger.error(f"Failed to push event to Redis: {e}")
-        raise HTTPException(status_code=503, detail="Service temporarily unavailable. Please try again.")
+        raise HTTPException(
+            status_code=503, detail="Service temporarily unavailable. Please try again."
+        )
 
 
 @app.get("/v1/events")
@@ -120,7 +133,9 @@ def get_events(
                 return result
     except Exception as e:
         logger.error(f"Database query failed: {e}")
-        raise HTTPException(status_code=503, detail="Service temporarily unavailable. Please try again.")
+        raise HTTPException(
+            status_code=503, detail="Service temporarily unavailable. Please try again."
+        )
 
 
 @app.get("/readyz")
@@ -139,7 +154,9 @@ def readyz():
 
     if redis_connected and postgres_connected:
         return {"status": "ok"}
-    raise HTTPException(status_code=503, detail="Service temporarily unavailable. Please try again.")
+    raise HTTPException(
+        status_code=503, detail="Service temporarily unavailable. Please try again."
+    )
 
 
 @app.get("/livez")
