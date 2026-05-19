@@ -53,14 +53,18 @@ spec:
             - pg_isready
             - -U
             - $(POSTGRES_USER)
+            - -d
+            - $(POSTGRES_DB)
           initialDelaySeconds: 30
-          periodSeconds: 15
+          periodSeconds: 30
         readinessProbe:
           exec:
             command:
-            - pg_isready
+            - psql
             - -U
             - $(POSTGRES_USER)
+            - -c
+            - SELECT 1
           initialDelaySeconds: 15
           periodSeconds: 10
         volumeMounts:
