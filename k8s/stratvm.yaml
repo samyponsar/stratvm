@@ -22,7 +22,6 @@ data:
   POSTGRES_DB: stratvm
   REDIS_HOST: redis-service
   REDIS_PORT: "6379"
-  API_KEY: c3VwZXJzZWNyZXRhcGlrZXk=
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy

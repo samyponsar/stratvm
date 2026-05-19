@@ -46,8 +46,9 @@ spec:
         livenessProbe:
           exec:
             command:
-            - redis-cli
-            - ping
+            - sh
+            - -c
+            - /app/.venv/bin/python -c "import os, redis; r=redis.Redis(host=os.environ['REDIS_HOST'],port=int(os.environ['REDIS_PORT']),username=os.environ['REDIS_USER'],password=os.environ['REDIS_PASSWORD']); print(r.ping())"
           initialDelaySeconds: 10
           periodSeconds: 15
         readinessProbe:
@@ -55,7 +56,7 @@ spec:
             command:
             - sh
             - -c
-            - redis-cli ping && pg_isready -U $POSTGRES_USER
+            - /app/.venv/bin/python -c "import os, redis, psycopg; r=redis.Redis(host=os.environ['REDIS_HOST'],port=int(os.environ['REDIS_PORT']),username=os.environ['REDIS_USER'],password=os.environ['REDIS_PASSWORD']); r.ping(); c=psycopg.connect(conninfo='dbname='+os.environ['POSTGRES_DB']+' user='+os.environ['POSTGRES_USER']+' password='+os.environ['POSTGRES_PASSWORD']+' host='+os.environ['POSTGRES_HOST']+' port='+os.environ['POSTGRES_PORT']); c.close()"
           initialDelaySeconds: 10
           periodSeconds: 10
         env:

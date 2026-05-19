@@ -15,6 +15,12 @@ from shared.event import Event
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+REQUIRED_ENV = ["REDIS_HOST", "REDIS_PORT", "REDIS_USER", "REDIS_PASSWORD",
+                "POSTGRES_HOST", "POSTGRES_PORT", "POSTGRES_DB", "POSTGRES_USER", "POSTGRES_PASSWORD"]
+for var in REQUIRED_ENV:
+    if not os.getenv(var):
+        raise RuntimeError(f"Missing required environment variable: {var}")
+
 REDIS_RETRY = redis.retry.Retry(backoff=redis.backoff.exponential, retries=3)
 REDIS_CONNECTION = redis.Redis(
     host=os.getenv("REDIS_HOST"),
@@ -41,20 +47,21 @@ POSTGRES_POOL = psycopg.pool.ConnectionPool(
 )
 
 app = FastAPI(
-    title="spectrvm API",
+    title="stratvm API",
     description="Provides endpoints for clients to post their events to, and for their dashboard to retrieve them.",
     version="0.1.0",
     contact={"name": "Admin", "email": "samy.ponsar@proton.me"},
-    dependencies=[Depends(HTTPBearer(auto_error=False))],
 )
 
 
-def api_key_required(credentials: HTTPAuthorizationCredentials = Depends(HTTPBearer(auto_error=False))):
+def api_key_required(
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(HTTPBearer(auto_error=False)),
+):
     if credentials is None:
-        return True
+        raise HTTPException(status_code=401, detail="API key required")
     expected = os.getenv("API_KEY")
     if credentials.credentials == expected:
-        return True
+        return credentials.credentials
     raise HTTPException(status_code=401, detail="Invalid API key")
 
 
@@ -66,7 +73,7 @@ class EventCreate(BaseModel):
 
 
 @app.post("/v1/events", status_code=201)
-def push_event(body: EventCreate, _ = Depends(api_key_required)):
+def push_event(body: EventCreate, _=Depends(api_key_required)):
     try:
         event = Event(
             tenant_id=body.tenant_id,
@@ -76,13 +83,13 @@ def push_event(body: EventCreate, _ = Depends(api_key_required)):
             metadata=body.metadata,
         )
     except Exception as e:
-        logger.error(f"{e}")
+        logger.error(f"Event validation failed: {e}")
         raise HTTPException(status_code=422, detail=str(e))
     try:
         REDIS_CONNECTION.lpush("events", event.model_dump_json())
         return event
     except Exception as e:
-        logger.error(f"{e}")
+        logger.error(f"Failed to push event to Redis: {e}")
         raise HTTPException(status_code=503, detail="Service temporarily unavailable. Please try again.")
 
 
@@ -111,7 +118,8 @@ def get_events(
                     validated = Event(**event_dict)
                     result.append(validated.model_dump())
                 return result
-    except Exception:
+    except Exception as e:
+        logger.error(f"Database query failed: {e}")
         raise HTTPException(status_code=503, detail="Service temporarily unavailable. Please try again.")
 
 
@@ -121,11 +129,13 @@ def readyz():
         redis_connected = REDIS_CONNECTION.ping()
     except redis.exceptions.RedisError:
         redis_connected = False
+    postgres_connected = False
     try:
-        POSTGRES_POOL.connection()
-        postgres_connected = True
+        with POSTGRES_POOL.connection() as conn:
+            conn.execute("SELECT 1")
+            postgres_connected = True
     except Exception:
-        postgres_connected = False
+        pass
 
     if redis_connected and postgres_connected:
         return {"status": "ok"}

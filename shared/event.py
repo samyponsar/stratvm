@@ -11,8 +11,8 @@ class Event(BaseModel):
     event_type: str = Field(..., max_length=128)
     id: Optional[int] = None
     received_at: datetime
-    processed_at: datetime
-    committed_at: datetime
+    processed_at: Optional[datetime] = None
+    committed_at: Optional[datetime] = None
     payload: Optional[dict] = None
     metadata: Optional[dict] = None
 

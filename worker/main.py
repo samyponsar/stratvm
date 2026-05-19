@@ -9,12 +9,17 @@ import psycopg
 import psycopg.pool
 import redis
 import redis.retry
-import redis.exceptions
 
 from shared.event import Event
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+REQUIRED_ENV = ["REDIS_HOST", "REDIS_PORT", "REDIS_USER", "REDIS_PASSWORD",
+                "POSTGRES_HOST", "POSTGRES_PORT", "POSTGRES_DB", "POSTGRES_USER", "POSTGRES_PASSWORD"]
+for var in REQUIRED_ENV:
+    if not os.getenv(var):
+        raise RuntimeError(f"Missing required environment variable: {var}")
 
 REDIS_RETRY = redis.retry.Retry(backoff=redis.backoff.exponential, retries=3)
 REDIS_CONNECTION = redis.Redis(

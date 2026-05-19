@@ -1,0 +1,11 @@
+**/__pycache__
+**/*.pyc
+**/*.pyo
+**/.venv
+**/.ruff_cache
+**/.mypy_cache
+**/.git
+**/.gitignore
+**/*.tar
+node_modules
+uv.lock
