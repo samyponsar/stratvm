@@ -67,7 +67,7 @@ spec:
             - -d
             - $(POSTGRES_DB)
             - -t
-            - 1
+            - "1"
           initialDelaySeconds: 15
           periodSeconds: 10
         volumeMounts:
