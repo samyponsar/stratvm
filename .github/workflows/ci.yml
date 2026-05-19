@@ -43,7 +43,8 @@ jobs:
 
       - name: Download kube-score
         run: |
-          curl -sL https://github.com/zegl/kube-score/releases/latest/download/kube-score_linux_amd64 -o kube-score
+          URL=$(curl -s https://api.github.com/repos/zegl/kube-score/releases/latest | python3 -c "import sys,json; r=json.load(sys.stdin); print([a['browser_download_url'] for a in r['assets'] if 'linux_amd64' in a['name'] and not a['name'].endswith('.tar.gz')][0])")
+          curl -sL "$URL" -o kube-score
           chmod +x kube-score
 
       - name: Score K8s manifests
