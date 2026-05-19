@@ -16,7 +16,6 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_OWNER: samyponsar
-  IMAGE_TAG: ${{ github.sha }}
 
 jobs:
   lint:
@@ -75,12 +74,12 @@ jobs:
           file: ./api/Containerfile
           outputs: type=registry
           push: true
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/api:${{ env.IMAGE_TAG }},${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/api:latest
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/api:main
 
       - name: Scan api
         uses: aquasecurity/trivy-action@v0.36.0
         with:
-          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/api:${{ env.IMAGE_TAG }}
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/api:main
           format: table
           exit-code: 1
           severity: HIGH,CRITICAL
@@ -92,12 +91,12 @@ jobs:
           file: ./worker/Containerfile
           outputs: type=registry
           push: true
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/worker:${{ env.IMAGE_TAG }},${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/worker:latest
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/worker:main
 
       - name: Scan worker
         uses: aquasecurity/trivy-action@v0.36.0
         with:
-          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/worker:${{ env.IMAGE_TAG }}
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/worker:main
           format: table
           exit-code: 1
           severity: HIGH,CRITICAL
@@ -109,12 +108,12 @@ jobs:
           file: ./dashboard/Containerfile
           outputs: type=registry
           push: true
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/dashboard:${{ env.IMAGE_TAG }},${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/dashboard:latest
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/dashboard:main
 
       - name: Scan dashboard
         uses: aquasecurity/trivy-action@v0.36.0
         with:
-          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/dashboard:${{ env.IMAGE_TAG }}
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/dashboard:main
           format: table
           exit-code: 1
           severity: HIGH,CRITICAL

@@ -27,7 +27,7 @@ spec:
               topologyKey: kubernetes.io/hostname
       containers:
       - name: api
-        image: ghcr.io/samyponsar/api:latest
+        image: ghcr.io/samyponsar/api:main
         imagePullPolicy: Always
         securityContext:
           runAsNonRoot: true

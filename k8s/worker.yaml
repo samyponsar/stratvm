@@ -27,7 +27,7 @@ spec:
               topologyKey: kubernetes.io/hostname
       containers:
       - name: worker
-        image: ghcr.io/samyponsar/worker:latest
+        image: ghcr.io/samyponsar/worker:main
         imagePullPolicy: Always
         securityContext:
           runAsNonRoot: true
