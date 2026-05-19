@@ -10,3 +10,4 @@ dependencies = [
     "pydantic>=2.13.3",
     "redis>=7.4.0",
 ]
+

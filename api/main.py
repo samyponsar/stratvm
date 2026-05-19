@@ -7,8 +7,7 @@ import logging
 import os
 import redis
 import redis.retry
-import psycopg
-import psycopg.pool
+from psycopg_pool import ConnectionPool
 
 from shared.event import Event
 
@@ -41,7 +40,7 @@ REDIS_CONNECTION = redis.Redis(
     socket_connect_timeout=5,
 )
 
-POSTGRES_POOL = psycopg.pool.ConnectionPool(
+POSTGRES_POOL = ConnectionPool(
     conninfo=(
         f"dbname={os.getenv('POSTGRES_DB')} "
         f"user={os.getenv('POSTGRES_USER')} "

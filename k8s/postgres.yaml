@@ -48,6 +48,11 @@ spec:
             secretKeyRef:
               name: stratvm-secret
               key: POSTGRES_PASSWORD
+        - name: POSTGRES_DB
+          valueFrom:
+            configMapKeyRef:
+              name: stratvm-config
+              key: POSTGRES_DB
         livenessProbe:
           exec:
             command:

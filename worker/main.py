@@ -5,8 +5,8 @@ import signal
 import time
 import traceback
 from datetime import UTC, datetime
-import psycopg
-import psycopg.pool
+from psycopg_pool import ConnectionPool
+from psycopg.errors import OperationalError
 import redis
 import redis.retry
 
@@ -42,7 +42,7 @@ REDIS_CONNECTION = redis.Redis(
     health_check_interval=30,
 )
 
-POSTGRES_POOL = psycopg.pool.ConnectionPool(
+POSTGRES_POOL = ConnectionPool(
     conninfo=(
         f"dbname={os.getenv('POSTGRES_DB')} "
         f"user={os.getenv('POSTGRES_USER')} "
@@ -107,7 +107,7 @@ def flush_events():
             pending_events.clear()
             return
 
-        except psycopg.OperationalError as e:
+        except OperationalError as e:
             wait = min(2**attempt, 30)
             logger.warning(
                 f"Postgres write failed (attempt {attempt + 1}/{max_retries}): {e}. Retrying in {wait}s..."
