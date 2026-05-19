@@ -48,7 +48,7 @@ jobs:
           chmod +x kube-score
 
       - name: Score K8s manifests
-        run: ./kube-score score --ignore-test container-security-context-user-group-id k8s/*
+        run: ./kube-score score k8s/*
 
   build-and-scan:
     needs: [lint, kube-score]
