@@ -1,4 +1,6 @@
-FROM ghcr.io/astral-sh/uv:alpine
+FROM python:3.14-alpine
+
+RUN pip install --no-cache-dir uv
 
 WORKDIR /app
 

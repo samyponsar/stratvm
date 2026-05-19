@@ -7,4 +7,4 @@ apply:
 	kubectl -n stratvm apply -f ./k8s/
 
 delete:
-	-kubectl -n stratvm delete -f ./k8s/
+	-kubectl -n stratvm delete --wait=true --timeout=120s -f ./k8s/

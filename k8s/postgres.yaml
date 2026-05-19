@@ -24,7 +24,6 @@ spec:
           runAsNonRoot: true
           runAsUser: 999
           runAsGroup: 999
-          readOnlyRootFilesystem: true
         resources:
           requests:
             cpu: 100m
@@ -75,10 +74,6 @@ spec:
           subPath: postgres_init.sql
         - name: tmp
           mountPath: /tmp
-        - name: run
-          mountPath: /var/run/postgresql
-        - name: lib
-          mountPath: /usr/local/lib
       volumes:
       - name: postgres-data
         emptyDir: {}
@@ -86,10 +81,6 @@ spec:
         configMap:
           name: postgres-init
       - name: tmp
-        emptyDir: {}
-      - name: run
-        emptyDir: {}
-      - name: lib
         emptyDir: {}
 ---
 apiVersion: v1
