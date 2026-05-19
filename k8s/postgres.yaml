@@ -44,18 +44,17 @@ spec:
     spec:
       automountServiceAccountToken: false
       securityContext:
-        runAsNonRoot: true
-        runAsUser: 65534
-        runAsGroup: 65534
-        fsGroup: 65534
+        runAsUser: 999
+        runAsGroup: 999
+        fsGroup: 999
       containers:
       - name: postgres
         image: docker.io/library/postgres:18-alpine
         imagePullPolicy: Always
         securityContext:
           runAsNonRoot: true
-          runAsUser: 65534
-          runAsGroup: 65534
+          runAsUser: 999
+          runAsGroup: 999
           readOnlyRootFilesystem: true
         resources:
           requests:
@@ -79,14 +78,12 @@ spec:
             secretKeyRef:
               name: stratvm-secret
               key: POSTGRES_PASSWORD
-        - name: PGDATA
-          value: /var/lib/postgresql/18/docker
         livenessProbe:
           exec:
             command:
             - sh
             - -c
-            - test -d /var/lib/postgresql/18/docker
+            - test -d /var/lib/postgresql/data
           initialDelaySeconds: 15
           periodSeconds: 15
         readinessProbe:
@@ -99,7 +96,7 @@ spec:
           periodSeconds: 10
         volumeMounts:
         - name: postgres-data
-          mountPath: /var/lib/postgresql/18/docker
+          mountPath: /var/lib/postgresql
         - name: init
           mountPath: /docker-entrypoint-initdb.d/init.sql
           subPath: postgres_init.sql

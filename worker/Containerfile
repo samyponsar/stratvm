@@ -5,6 +5,6 @@ WORKDIR /app
 COPY shared/ ./shared/
 COPY worker/ ./
 
-RUN uv sync
+RUN uv sync && chown -R 65534:65534 /app/.venv
 
 CMD ["uv", "run", "main.py"]

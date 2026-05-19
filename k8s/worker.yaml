@@ -104,6 +104,12 @@ spec:
             secretKeyRef:
               name: stratvm-secret
               key: WORKER_REDIS_PASSWORD
+        volumeMounts:
+        - name: uv-cache
+          mountPath: /.cache
+      volumes:
+      - name: uv-cache
+        emptyDir: {}
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy

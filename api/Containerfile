@@ -5,7 +5,7 @@ WORKDIR /app
 COPY shared/ ./shared/
 COPY api/ ./
 
-RUN uv sync
+RUN uv sync && chown -R 65534:65534 /app/.venv
 
 EXPOSE 8000
 

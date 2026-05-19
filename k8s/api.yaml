@@ -105,9 +105,15 @@ spec:
               key: API_REDIS_PASSWORD
         - name: API_KEY
           valueFrom:
-            secretKeyRef:
-              name: stratvm-secret
+            configMapKeyRef:
+              name: stratvm-config
               key: API_KEY
+        volumeMounts:
+        - name: uv-cache
+          mountPath: /.cache
+      volumes:
+      - name: uv-cache
+        emptyDir: {}
 ---
 apiVersion: v1
 kind: Service
