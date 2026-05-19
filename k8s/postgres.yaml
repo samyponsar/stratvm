@@ -61,11 +61,13 @@ spec:
         readinessProbe:
           exec:
             command:
-            - psql
+            - pg_isready
             - -U
             - $(POSTGRES_USER)
-            - -c
-            - SELECT 1
+            - -d
+            - $(POSTGRES_DB)
+            - -t
+            - 1
           initialDelaySeconds: 15
           periodSeconds: 10
         volumeMounts:
