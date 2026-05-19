@@ -69,16 +69,12 @@ spec:
           periodSeconds: 10
         volumeMounts:
         - name: postgres-data
-          mountPath: /var/lib/postgresql/data
+          mountPath: /var/lib/postgresql
         - name: init
           mountPath: /docker-entrypoint-initdb.d/init.sql
           subPath: postgres_init.sql
         - name: tmp
           mountPath: /tmp
-        - name: run
-          mountPath: /var/run/postgresql
-        - name: lib
-          mountPath: /usr/local/lib
       volumes:
       - name: postgres-data
         emptyDir: {}
@@ -86,10 +82,6 @@ spec:
         configMap:
           name: postgres-init
       - name: tmp
-        emptyDir: {}
-      - name: run
-        emptyDir: {}
-      - name: lib
         emptyDir: {}
 ---
 apiVersion: v1
