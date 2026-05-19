@@ -128,8 +128,9 @@ while not shutdown:
         flush_events()
         last_flush = time.monotonic()
 
-    _, data = REDIS_CONNECTION.brpop("events", timeout=1)
-    if data:
+    result = REDIS_CONNECTION.brpop("events", timeout=1)
+    if result:
+        _, data = result
         try:
             event = Event.model_validate(json.loads(data.decode("utf-8")))
             event.processed_at = datetime.now(UTC)
