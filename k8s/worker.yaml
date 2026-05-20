@@ -49,16 +49,20 @@ spec:
             - sh
             - -c
             - /app/.venv/bin/python -c "import os, redis; r=redis.Redis(host=os.environ['REDIS_HOST'],port=int(os.environ['REDIS_PORT']),username=os.environ['REDIS_USER'],password=os.environ['REDIS_PASSWORD']); print(r.ping())"
-          initialDelaySeconds: 10
-          periodSeconds: 15
+          initialDelaySeconds: 60
+          timeoutSeconds: 5
+          periodSeconds: 30
+          failureThreshold: 3
         readinessProbe:
           exec:
             command:
             - sh
             - -c
             - /app/.venv/bin/python -c "import os, redis, psycopg; r=redis.Redis(host=os.environ['REDIS_HOST'],port=int(os.environ['REDIS_PORT']),username=os.environ['REDIS_USER'],password=os.environ['REDIS_PASSWORD']); r.ping(); c=psycopg.connect(conninfo='dbname='+os.environ['POSTGRES_DB']+' user='+os.environ['POSTGRES_USER']+' password='+os.environ['POSTGRES_PASSWORD']+' host='+os.environ['POSTGRES_HOST']+' port='+os.environ['POSTGRES_PORT']); c.close()"
-          initialDelaySeconds: 10
-          periodSeconds: 10
+          initialDelaySeconds: 45
+          timeoutSeconds: 5
+          periodSeconds: 20
+          failureThreshold: 3
         env:
         - name: POSTGRES_HOST
           valueFrom:

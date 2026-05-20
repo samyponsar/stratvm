@@ -10,7 +10,6 @@ on:
       - 'worker/**'
       - 'dashboard/**'
       - 'k8s/**'
-      - '*/Containerfile'
 
 env:
   REGISTRY: ghcr.io

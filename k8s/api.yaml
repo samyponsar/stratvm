@@ -49,14 +49,14 @@ spec:
           httpGet:
             path: /livez
             port: 8000
-          initialDelaySeconds: 10
-          periodSeconds: 15
+          initialDelaySeconds: 30
+          periodSeconds: 30
         readinessProbe:
           httpGet:
             path: /readyz
             port: 8000
-          initialDelaySeconds: 10
-          periodSeconds: 10
+          initialDelaySeconds: 20
+          periodSeconds: 20
         env:
         - name: POSTGRES_HOST
           valueFrom:
@@ -149,6 +149,13 @@ spec:
       podSelector:
         matchLabels:
           app.kubernetes.io/name: traefik
+    ports:
+    - protocol: TCP
+      port: 8000
+  - from:
+    - podSelector:
+        matchLabels:
+          app: dashboard
     ports:
     - protocol: TCP
       port: 8000

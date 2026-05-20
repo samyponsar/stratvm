@@ -87,7 +87,7 @@ def flush_events():
             with POSTGRES_POOL.connection() as conn:
                 with conn.cursor() as cursor:
                     cursor.executemany(
-                        "INSERT INTO events (tenant_id, event_type, received_at, processed_at, committed_at, payload, metadata) VALUES (%s, %s, %s, %s, %s, %s, %s) ON CONFLICT DO NOTHING",
+                        "INSERT INTO events (tenant_id, event_type, received_at, processed_at, committed_at, payload, metadata) VALUES (%s, %s, %s, %s, %s, %s, %s)",
                         [
                             (
                                 e.tenant_id,

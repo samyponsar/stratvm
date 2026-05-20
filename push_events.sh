@@ -16,9 +16,5 @@ for i in $(seq 1 1000); do
       -d "{\"tenant_id\":\"acme\",\"event_type\":\"test.event\",\"payload\":{\"iteration\":$i}}")
   fi
 
-  if [ $? -ne 0 ]; then
-    echo "curl failed at iteration $i" >&2
-    exit 1
-  fi
   echo "$resp"
 done

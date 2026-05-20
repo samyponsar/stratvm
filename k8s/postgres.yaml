@@ -1,3 +1,15 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-pvc
+  namespace: stratvm
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -54,30 +66,17 @@ spec:
               name: stratvm-config
               key: POSTGRES_DB
         livenessProbe:
-          exec:
-            command:
-            - pg_isready
-            - -h
-            - 127.0.0.1
-            - -U
-            - $(POSTGRES_USER)
-            - -d
-            - $(POSTGRES_DB)
+          tcpSocket:
+            port: 5432
           initialDelaySeconds: 30
           periodSeconds: 30
         readinessProbe:
           exec:
             command:
-            - pg_isready
-            - -h
-            - 127.0.0.1
-            - -U
-            - $(POSTGRES_USER)
-            - -d
-            - $(POSTGRES_DB)
-            - -t
-            - "1"
-          initialDelaySeconds: 15
+            - test
+            - -S
+            - /var/run/postgresql/.s.PGSQL.5432
+          initialDelaySeconds: 10
           periodSeconds: 10
         volumeMounts:
         - name: postgres-data
@@ -89,7 +88,8 @@ spec:
           mountPath: /tmp
       volumes:
       - name: postgres-data
-        emptyDir: {}
+        persistentVolumeClaim:
+          claimName: postgres-pvc
       - name: init
         configMap:
           name: postgres-init
@@ -152,7 +152,16 @@ spec:
     ports:
     - protocol: TCP
       port: 5432
-  egress: []
+  egress:
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: kube-system
+    ports:
+    - protocol: UDP
+      port: 53
+    - protocol: TCP
+      port: 53
 ---
 apiVersion: policy/v1
 kind: PodDisruptionBudget

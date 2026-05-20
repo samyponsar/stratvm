@@ -151,11 +151,10 @@ def readyz():
             postgres_connected = True
     except Exception:
         pass
-
     if redis_connected and postgres_connected:
         return {"status": "ok"}
     raise HTTPException(
-        status_code=503, detail="Service temporarily unavailable. Please try again."
+        status_code=503, detail=f"Service temporarily unavailable. Please try again. redis: {redis_connected} / postgres {postgres_connected}"
     )
 
 
