@@ -36,7 +36,7 @@ jobs:
       - name: Build and push api
         uses: docker/build-push-action@v7
         with:
-          context: .
+          context: ./api
           file: ./api/Dockerfile
           outputs: type=registry
           push: true
@@ -45,7 +45,7 @@ jobs:
       - name: Build and push worker
         uses: docker/build-push-action@v7
         with:
-          context: .
+          context: ./worker
           file: ./worker/Dockerfile
           outputs: type=registry
           push: true
