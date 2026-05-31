@@ -10,7 +10,6 @@ postgres_connection = psycopg.connect("host=postgres port=5432 user=postgres con
 postgres_cursor = postgres_connection.cursor()
 
 def main():
-    print("Hello!")
     while True:
         item = redis_connection.brpop('event_queue')
         entry = json.loads(item[1].decode("utf-8"))

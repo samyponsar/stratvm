@@ -1,11 +1,13 @@
 FROM ghcr.io/astral-sh/uv:alpine
 
-COPY app/ /app
+RUN adduser -u 1000 -D runner runner
+
+COPY --chown=1000 app/ /app
+
+USER 1000
 
 WORKDIR /app
 
 RUN uv sync
-
-ENV PYTHONUNBUFFERED=1
 
 CMD ["uv", "run", "main.py"]

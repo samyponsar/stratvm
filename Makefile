@@ -20,6 +20,7 @@ talos:
 
 talos-create: talos
 	talosctl cluster create qemu
+	kubectl apply -f https://raw.githubusercontent.com/longhorn/longhorn/v1.9.0/deploy/longhorn.yaml
 	mv controlplane.yaml worker.yaml talos
 	chown $(SUDO_USER):$(SUDO_USER) -R talos
 	chown $(SUDO_USER):$(SUDO_USER) -R $(HOME)/.kube
