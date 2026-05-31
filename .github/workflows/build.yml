@@ -3,6 +3,10 @@ name: build
 on:
   push:
     branches: [v2]
+    paths:
+      - '.github/**'
+      - 'api/**'
+      - 'worker/**'
 
 env:
   REGISTRY: ghcr.io
