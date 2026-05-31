@@ -16,6 +16,11 @@ spec:
       labels:
         app: postgres
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
       containers:
       - image: postgres:18-alpine
         name: postgres
@@ -30,6 +35,13 @@ spec:
           readOnly: true
         - name: db
           mountPath: /var/lib/postgresql/18/docker
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: [ALL]
+          runAsNonRoot: true
+          seccompProfile:
+            type: RuntimeDefault
       volumes:
       - name: init
         configMap:

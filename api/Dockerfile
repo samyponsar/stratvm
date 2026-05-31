@@ -1,6 +1,10 @@
 FROM ghcr.io/astral-sh/uv:alpine
 
-COPY app/ /app
+RUN useradd -u 1000 -s /bin/bash runner
+
+COPY app/ /app --chown runner:runner
+
+USER runner
 
 WORKDIR /app
 
