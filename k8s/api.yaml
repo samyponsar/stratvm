@@ -15,9 +15,9 @@ spec:
         app: api
     spec:
       containers:
-      - image: api:latest
+      - image: ghcr.io/samyponsar/api:main
         name: api
-        imagePullPolicy: IfNotPresent
+        imagePullPolicy: Always
         ports:
         - containerPort: 8000
         env:

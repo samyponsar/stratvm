@@ -15,9 +15,9 @@ spec:
         app: worker
     spec:
       containers:
-      - image: worker:latest
+      - image: ghcr.io/samyponsar/worker:latest
         name: worker
-        imagePullPolicy: IfNotPresent
+        imagePullPolicy: Always
         ports:
         - containerPort: 8000
         env:
