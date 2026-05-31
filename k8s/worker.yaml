@@ -15,7 +15,7 @@ spec:
         app: worker
     spec:
       containers:
-      - image: ghcr.io/samyponsar/worker:latest
+      - image: ghcr.io/samyponsar/worker:main
         name: worker
         imagePullPolicy: Always
         ports:
