@@ -37,7 +37,16 @@ jobs:
         uses: docker/build-push-action@v7
         with:
           context: .
-          file: ./api/Containerfile
+          file: ./api/Dockerfile
           outputs: type=registry
           push: true
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/api:main
+
+      - name: Build and push worker
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: ./worker/Dockerfile
+          outputs: type=registry
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/worker:main
