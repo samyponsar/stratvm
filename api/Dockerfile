@@ -2,7 +2,7 @@ FROM ghcr.io/astral-sh/uv:alpine
 
 RUN useradd -u 1000 -s /bin/bash runner
 
-COPY --chown 1000 app/ /app
+COPY --chown=1000 app/ /app
 
 USER 1000
 
