@@ -1,6 +1,6 @@
 FROM ghcr.io/astral-sh/uv:alpine
 
-RUN useradd -u 1000 -s /bin/bash runner
+RUN adduser -u 1000 -D runner runner
 
 COPY --chown=1000 app/ /app
 
