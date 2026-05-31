@@ -2,9 +2,9 @@ FROM ghcr.io/astral-sh/uv:alpine
 
 RUN useradd -u 1000 -s /bin/bash runner
 
-COPY app/ /app --chown runner:runner
+COPY --chown 1000 app/ /app
 
-USER runner
+USER 1000
 
 WORKDIR /app
 
